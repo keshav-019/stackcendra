@@ -17,6 +17,7 @@ import { Monitor, GitBranch, Settings, Users, Calendar } from 'lucide-react';
 export const UnifiedDashboard = () => {
   const [activeTab, setActiveTab] = useState('debugging');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(true);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden">
@@ -28,7 +29,7 @@ export const UnifiedDashboard = () => {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="h-16 bg-black/20 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-6">
+          <header className="h-16 bg-black/20 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-6 flex-shrink-0">
             <div className="flex items-center space-x-4">
               <div className="w-8 h-8 bg-gradient-ai rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">AI</span>
@@ -39,9 +40,9 @@ export const UnifiedDashboard = () => {
           </header>
 
           {/* Tabbed Interface */}
-          <div className="flex-1 p-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-              <TabsList className="grid w-full grid-cols-5 mb-4 bg-black/20">
+          <div className="flex-1 flex flex-col p-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+              <TabsList className="grid w-full grid-cols-5 mb-4 bg-black/20 flex-shrink-0">
                 <TabsTrigger value="debugging" className="flex items-center gap-2">
                   <Monitor size={16} />
                   Debug Session
@@ -64,24 +65,24 @@ export const UnifiedDashboard = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="h-[calc(100%-60px)]">
-                <TabsContent value="debugging" className="h-full">
+              <div className="flex-1 overflow-hidden">
+                <TabsContent value="debugging" className="h-full overflow-auto">
                   <DebuggingSession />
                 </TabsContent>
                 
-                <TabsContent value="git" className="h-full">
+                <TabsContent value="git" className="h-full overflow-auto">
                   <GitTreeVisualization />
                 </TabsContent>
                 
-                <TabsContent value="docker" className="h-full">
+                <TabsContent value="docker" className="h-full overflow-auto">
                   <DockerTopology />
                 </TabsContent>
                 
-                <TabsContent value="sprint" className="h-full">
+                <TabsContent value="sprint" className="h-full overflow-auto">
                   <SprintPlanning />
                 </TabsContent>
                 
-                <TabsContent value="video" className="h-full">
+                <TabsContent value="video" className="h-full overflow-auto">
                   <VideoCallInterface />
                 </TabsContent>
               </div>
@@ -90,7 +91,9 @@ export const UnifiedDashboard = () => {
         </div>
 
         {/* Right Sidebar - AI Assistant */}
-        <AIAssistant />
+        {aiAssistantOpen && (
+          <AIAssistant onClose={() => setAiAssistantOpen(false)} />
+        )}
       </div>
 
       {/* Bottom Dock */}

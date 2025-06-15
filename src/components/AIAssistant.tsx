@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,9 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Play, Settings, Monitor, GitBranch } from 'lucide-react';
+import { Play, Settings, Monitor, GitBranch, Zap, X } from 'lucide-react';
 
-export const AIAssistant = () => {
+interface AIAssistantProps {
+  onClose?: () => void;
+}
+
+export const AIAssistant = ({ onClose }: AIAssistantProps) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -89,18 +92,23 @@ export const AIAssistant = () => {
   ];
 
   return (
-    <div className="w-80 bg-black/20 backdrop-blur-md border-l border-white/10 flex flex-col">
-      {/* AI Assistant Header */}
-      <div className="p-4 border-b border-white/10 bg-gradient-ai/10">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-ai rounded-full flex items-center justify-center animate-pulse-ai">
-            <span className="text-white font-bold">AI</span>
+    <div className="w-80 bg-black/40 backdrop-blur-md border-l border-white/10 flex flex-col">
+      {/* Header */}
+      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-gradient-ai rounded-full flex items-center justify-center">
+            <Zap size={16} className="text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-white">DevOps Assistant</h3>
-            <p className="text-xs text-gray-300">Analyzing your stack...</p>
+            <h3 className="font-semibold text-white">AI Assistant</h3>
+            <p className="text-xs text-gray-400">DevOps Expert</p>
           </div>
         </div>
+        {onClose && (
+          <Button size="sm" variant="ghost" onClick={onClose} className="text-gray-400 hover:text-white">
+            <X size={16} />
+          </Button>
+        )}
       </div>
 
       {/* Quick Actions */}
