@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -112,7 +111,7 @@ export const MyTasks = () => {
   return (
     <div className="space-y-6">
       {/* My Tasks Overview */}
-      <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20 p-4">
+      <Card className="bg-black/20 border-white/10 p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <User className="text-blue-400" size={20} />

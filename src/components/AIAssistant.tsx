@@ -92,9 +92,9 @@ export const AIAssistant = ({ onClose }: AIAssistantProps) => {
   ];
 
   return (
-    <div className="w-80 bg-black/40 backdrop-blur-md border-l border-white/10 flex flex-col">
+    <div className="w-80 bg-black/40 backdrop-blur-md border-l border-white/10 flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-ai rounded-full flex items-center justify-center">
             <Zap size={16} className="text-white" />
@@ -112,7 +112,7 @@ export const AIAssistant = ({ onClose }: AIAssistantProps) => {
       </div>
 
       {/* Quick Actions */}
-      <div className="p-4 border-b border-white/10">
+      <div className="p-4 border-b border-white/10 flex-shrink-0">
         <h4 className="text-sm font-medium text-gray-300 mb-3">Quick Actions</h4>
         <div className="grid grid-cols-2 gap-2">
           {quickActions.map((action, index) => (
@@ -178,8 +178,8 @@ export const AIAssistant = ({ onClose }: AIAssistantProps) => {
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="p-4 border-t border-white/10">
+      {/* Input - Fixed positioning */}
+      <div className="p-4 border-t border-white/10 flex-shrink-0" style={{ paddingBottom: '5rem' }}>
         <div className="flex space-x-2">
           <Input
             value={inputValue}
@@ -199,7 +199,7 @@ export const AIAssistant = ({ onClose }: AIAssistantProps) => {
       </div>
 
       {/* AI Status */}
-      <div className="p-3 bg-black/30 text-center">
+      <div className="p-3 bg-black/30 text-center flex-shrink-0">
         <div className="flex items-center justify-center space-x-2">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           <span className="text-xs text-gray-300">AI Connected</span>
