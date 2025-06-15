@@ -11,13 +11,15 @@ import { SprintPlanning } from '@/components/SprintPlanning';
 import { VideoCallInterface } from '@/components/VideoCallInterface';
 import { BottomDock } from '@/components/BottomDock';
 import { NotificationCenter } from '@/components/NotificationCenter';
+import { UserDropdown } from '@/components/UserDropdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Monitor, GitBranch, Settings, Users, Calendar } from 'lucide-react';
+import { Monitor, GitBranch, Settings, Users, Calendar, MessageCircle } from 'lucide-react';
 
 export const UnifiedDashboard = () => {
   const [activeTab, setActiveTab] = useState('debugging');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(true);
+  const [isManagerMode, setIsManagerMode] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden">
@@ -36,11 +38,18 @@ export const UnifiedDashboard = () => {
               </div>
               <h1 className="text-xl font-bold gradient-text">DevOps AI Platform</h1>
             </div>
-            <NotificationCenter />
+            <div className="flex items-center space-x-2">
+              <NotificationCenter />
+              <UserDropdown 
+                isManagerMode={isManagerMode} 
+                onToggleManagerMode={setIsManagerMode}
+                onOpenAI={() => setAiAssistantOpen(true)}
+              />
+            </div>
           </header>
 
           {/* Tabbed Interface */}
-          <div className="flex-1 flex flex-col p-4">
+          <div className="flex-1 flex flex-col p-4 overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
               <TabsList className="grid w-full grid-cols-5 mb-4 bg-black/20 flex-shrink-0">
                 <TabsTrigger value="debugging" className="flex items-center gap-2">
@@ -66,24 +75,34 @@ export const UnifiedDashboard = () => {
               </TabsList>
 
               <div className="flex-1 overflow-hidden">
-                <TabsContent value="debugging" className="h-full overflow-auto">
-                  <DebuggingSession />
+                <TabsContent value="debugging" className="h-full">
+                  <div className="h-full overflow-y-auto pr-2">
+                    <DebuggingSession />
+                  </div>
                 </TabsContent>
                 
-                <TabsContent value="git" className="h-full overflow-auto">
-                  <GitTreeVisualization />
+                <TabsContent value="git" className="h-full">
+                  <div className="h-full overflow-y-auto pr-2">
+                    <GitTreeVisualization />
+                  </div>
                 </TabsContent>
                 
-                <TabsContent value="docker" className="h-full overflow-auto">
-                  <DockerTopology />
+                <TabsContent value="docker" className="h-full">
+                  <div className="h-full overflow-y-auto pr-2">
+                    <DockerTopology />
+                  </div>
                 </TabsContent>
                 
-                <TabsContent value="sprint" className="h-full overflow-auto">
-                  <SprintPlanning />
+                <TabsContent value="sprint" className="h-full">
+                  <div className="h-full overflow-y-auto pr-2">
+                    <SprintPlanning isManagerMode={isManagerMode} />
+                  </div>
                 </TabsContent>
                 
-                <TabsContent value="video" className="h-full overflow-auto">
-                  <VideoCallInterface />
+                <TabsContent value="video" className="h-full">
+                  <div className="h-full overflow-y-auto pr-2">
+                    <VideoCallInterface isManagerMode={isManagerMode} />
+                  </div>
                 </TabsContent>
               </div>
             </Tabs>
@@ -98,6 +117,16 @@ export const UnifiedDashboard = () => {
 
       {/* Bottom Dock */}
       <BottomDock />
+
+      {/* Floating AI Chat Button */}
+      {!aiAssistantOpen && (
+        <Button
+          onClick={() => setAiAssistantOpen(true)}
+          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-ai hover:opacity-80 shadow-lg z-50 flex items-center justify-center"
+        >
+          <MessageCircle size={24} />
+        </Button>
+      )}
     </div>
   );
 };

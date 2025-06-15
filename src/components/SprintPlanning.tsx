@@ -1,318 +1,268 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, Users, GitBranch, Settings } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-export const SprintPlanning = () => {
-  const [sprintProgress, setSprintProgress] = useState(64);
-  const [burndownData, setBurndownData] = useState([
-    { day: 1, planned: 100, actual: 100 },
-    { day: 2, planned: 92, actual: 95 },
-    { day: 3, planned: 84, actual: 88 },
-    { day: 4, planned: 76, actual: 82 },
-    { day: 5, planned: 68, actual: 75 },
-    { day: 6, planned: 60, actual: 64 },
-    { day: 7, planned: 52, actual: 58 },
+interface SprintPlanningProps {
+  isManagerMode: boolean;
+}
+
+export const SprintPlanning = ({ isManagerMode }: SprintPlanningProps) => {
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState('');
+
+  const [tasks, setTasks] = useState([
+    {
+      id: 1,
+      title: 'Implement database connection pooling',
+      description: 'Increase connection pool size to handle peak loads',
+      status: 'todo',
+      priority: 'high',
+      assignedTo: 'Sarah Chen',
+      dueDate: '2024-03-15'
+    },
+    {
+      id: 2,
+      title: 'Add circuit breaker pattern',
+      description: 'Implement circuit breaker to prevent cascading failures',
+      status: 'inprogress',
+      priority: 'medium',
+      assignedTo: 'Mike Rodriguez',
+      dueDate: '2024-03-18'
+    },
+    {
+      id: 3,
+      title: 'Write integration tests for payment service',
+      description: 'Cover timeout handling and error scenarios',
+      status: 'done',
+      priority: 'high',
+      assignedTo: 'Alex Kumar',
+      dueDate: '2024-03-12'
+    }
   ]);
 
-  const sprintGoals = [
-    { id: 1, title: 'Fix Payment Service Performance', priority: 'critical', progress: 85, assignee: 'Alex Kumar' },
-    { id: 2, title: 'Implement Circuit Breaker Pattern', priority: 'high', progress: 60, assignee: 'Sarah Chen' },
-    { id: 3, title: 'Database Connection Optimization', priority: 'high', progress: 40, assignee: 'Mike Rodriguez' },
-    { id: 4, title: 'Add Monitoring Dashboard', priority: 'medium', progress: 20, assignee: 'Lisa Park' },
-  ];
-
-  const [tasks, setTasks] = useState({
-    'todo': [
-      {
-        id: 'task-1',
-        title: 'Implement retry logic for payment failures',
-        description: 'Add exponential backoff retry mechanism',
-        assignee: 'Alex Kumar',
-        storyPoints: 5,
-        priority: 'high',
-        aiSuggestion: 'Based on error patterns, focus on timeout scenarios'
-      },
-      {
-        id: 'task-2',
-        title: 'Database connection pool tuning',
-        description: 'Optimize connection pool parameters',
-        assignee: 'Mike Rodriguez',
-        storyPoints: 3,
-        priority: 'medium',
-        aiSuggestion: 'Historical data suggests 25 connections optimal'
-      }
-    ],
-    'in-progress': [
-      {
-        id: 'task-3',
-        title: 'Circuit breaker implementation',
-        description: 'Add circuit breaker for external service calls',
-        assignee: 'Sarah Chen',
-        storyPoints: 8,
-        priority: 'critical',
-        aiSuggestion: 'Similar implementations show 40% error reduction'
-      }
-    ],
-    'review': [
-      {
-        id: 'task-4',
-        title: 'Performance monitoring setup',
-        description: 'Configure APM tools for service monitoring',
-        assignee: 'Lisa Park',
-        storyPoints: 3,
-        priority: 'medium',
-        aiSuggestion: 'Auto-deploy with current CI/CD pipeline'
-      }
-    ],
-    'done': [
-      {
-        id: 'task-5',
-        title: 'Error logging improvements',
-        description: 'Enhanced error logging with structured data',
-        assignee: 'Alex Kumar',
-        storyPoints: 2,
-        priority: 'low',
-        aiSuggestion: 'Deployment successful, 95% error visibility improved'
-      }
-    ]
+  const [teamVelocity] = useState({
+    currentSprint: 45,
+    average: 42,
+    trend: '+5%'
   });
 
-  const teamVelocity = {
-    current: 47,
-    average: 52,
-    target: 55,
-    trend: 'improving'
-  };
-
-  const aiInsights = [
+  const taskColumns = [
     {
-      type: 'prediction',
-      title: 'Sprint Completion Probability',
-      value: '87%',
-      description: 'Based on current velocity and remaining work',
-      confidence: 'high'
+      title: 'To Do',
+      status: 'todo',
+      color: 'bg-red-500'
     },
     {
-      type: 'recommendation',
-      title: 'Resource Optimization',
-      value: 'Reassign 1 story',
-      description: 'Move database task to next sprint for better balance',
-      confidence: 'medium'
+      title: 'In Progress',
+      status: 'inprogress',
+      color: 'bg-blue-500'
     },
     {
-      type: 'risk',
-      title: 'Dependency Risk',
-      value: 'Medium',
-      description: 'Circuit breaker blocks 2 other tasks',
-      confidence: 'high'
+      title: 'Done',
+      status: 'done',
+      color: 'bg-green-500'
     }
   ];
 
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
+  const aiSprintAnalysis = {
+    riskAssessment: 'Low',
+    potentialBlockers: 'Database migration timing',
+    recommendations: 'Run migrations during low-traffic hours'
+  };
+
+  const createNewTask = () => {
+    if (!newTaskTitle.trim()) return;
     
-    const { source, destination } = result;
+    // In manager mode, create task but don't assign to manager
+    console.log('Creating new task:', {
+      title: newTaskTitle,
+      description: newTaskDescription,
+      priority: selectedPriority,
+      createdBy: 'Manager',
+      assignedTo: null // Manager cannot be assigned tasks
+    });
     
-    if (source.droppableId !== destination.droppableId) {
-      const sourceItems = Array.from(tasks[source.droppableId]);
-      const destItems = Array.from(tasks[destination.droppableId]);
-      const [removed] = sourceItems.splice(source.index, 1);
-      destItems.splice(destination.index, 0, removed);
-      
-      setTasks({
-        ...tasks,
-        [source.droppableId]: sourceItems,
-        [destination.droppableId]: destItems
-      });
-    }
+    // Reset form
+    setNewTaskTitle('');
+    setNewTaskDescription('');
+    setSelectedPriority('');
   };
 
   return (
-    <div className="h-full grid grid-cols-4 gap-4">
-      {/* Sprint Overview */}
-      <div className="space-y-4">
-        <Card className="bg-gradient-ai/10 border-ai-primary/20 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Calendar className="text-ai-primary" size={20} />
-              Sprint 47
-            </h3>
-            <Badge className="bg-green-500/20 text-green-300">Active</Badge>
-          </div>
-          
+    <div className="space-y-6">
+      {/* Manager Task Creation */}
+      {isManagerMode && (
+        <Card className="bg-yellow-500/10 border-yellow-500/20 p-4">
+          <h4 className="text-md font-semibold text-white mb-3 flex items-center gap-2">
+            👑 Manager: Create New Task
+          </h4>
           <div className="space-y-3">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-300">Progress</span>
-                <span className="text-sm text-white">{sprintProgress}%</span>
-              </div>
-              <Progress value={sprintProgress} className="h-2" />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div>
-                <p className="text-2xl font-bold text-white">{teamVelocity.current}</p>
-                <p className="text-xs text-gray-400">Story Points</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-green-400">6</p>
-                <p className="text-xs text-gray-400">Days Left</p>
-              </div>
+            <Input
+              placeholder="Task title..."
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              className="bg-white/5 border-white/10 text-white"
+            />
+            <Textarea
+              placeholder="Task description..."
+              value={newTaskDescription}
+              onChange={(e) => setNewTaskDescription(e.target.value)}
+              className="bg-white/5 border-white/10 text-white"
+            />
+            <div className="flex gap-2">
+              <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High Priority</SelectItem>
+                  <SelectItem value="medium">Medium Priority</SelectItem>
+                  <SelectItem value="low">Low Priority</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={createNewTask} className="bg-yellow-500/20 text-yellow-300">
+                Create Task
+              </Button>
             </div>
           </div>
         </Card>
+      )}
 
-        <Card className="bg-black/20 border-white/10 p-4">
-          <h4 className="text-md font-semibold text-white mb-3">Sprint Goals</h4>
-          <div className="space-y-3">
-            {sprintGoals.map((goal) => (
-              <div key={goal.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white">{goal.title}</span>
-                  <Badge className={`text-xs ${
-                    goal.priority === 'critical' ? 'bg-red-500/20 text-red-300' :
-                    goal.priority === 'high' ? 'bg-orange-500/20 text-orange-300' :
-                    'bg-blue-500/20 text-blue-300'
-                  }`}>
-                    {goal.priority}
-                  </Badge>
-                </div>
-                <Progress value={goal.progress} className="h-2" />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{goal.assignee}</span>
-                  <span className="text-xs text-white">{goal.progress}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+      {/* Sprint Overview - Full Width */}
+      <Card className="bg-gradient-sprint/10 border-green-500/20 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Calendar className="text-green-400" size={20} />
+            Sprint Overview
+          </h3>
+          <Badge className="bg-green-500/20 text-green-300">
+            Week 3 (March 11 - March 15)
+          </Badge>
+        </div>
 
-        <Card className="bg-gradient-ai/10 border-ai-primary/20 p-4">
-          <h4 className="text-md font-semibold text-white mb-3">🤖 AI Sprint Insights</h4>
-          <div className="space-y-3">
-            {aiInsights.map((insight, index) => (
-              <div key={index} className="p-3 bg-white/5 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-white">{insight.title}</span>
-                  <Badge className={`text-xs ${
-                    insight.confidence === 'high' ? 'bg-green-500/20 text-green-300' :
-                    'bg-yellow-500/20 text-yellow-300'
-                  }`}>
-                    {insight.confidence}
-                  </Badge>
-                </div>
-                <p className="text-lg font-bold text-ai-primary">{insight.value}</p>
-                <p className="text-xs text-gray-400">{insight.description}</p>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Kanban Board */}
-      <div className="col-span-3">
-        <Card className="bg-black/20 border-white/10 p-4 h-full">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Sprint Board</h3>
-            <div className="flex space-x-2">
-              <Button size="sm" variant="outline">Add Story</Button>
-              <Button size="sm" className="bg-gradient-ai">AI Optimize</Button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <p className="text-sm font-medium text-green-300 mb-1">Tasks Completed</p>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-green-400">8 / 12</span>
+              <Badge className="bg-green-500/20 text-green-300">67%</Badge>
             </div>
           </div>
 
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="grid grid-cols-4 gap-4 h-[calc(100%-80px)]">
-              {Object.entries(tasks).map(([columnId, columnTasks]) => (
-                <div key={columnId} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-white capitalize">
-                      {columnId.replace('-', ' ')}
-                    </h4>
-                    <Badge variant="outline" className="text-xs">
-                      {columnTasks.length}
-                    </Badge>
+          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <p className="text-sm font-medium text-blue-300 mb-1">Tasks In Progress</p>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-blue-400">3</span>
+              <Badge className="bg-blue-500/20 text-blue-300">Active</Badge>
+            </div>
+          </div>
+
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-sm font-medium text-red-300 mb-1">Tasks Remaining</p>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-red-400">1</span>
+              <Badge className="bg-red-500/20 text-red-300">Critical</Badge>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Task Columns - Full Width */}
+      <div className="space-y-6">
+        {taskColumns.map((column, index) => (
+          <Card key={index} className={`bg-black/20 border-white/10 p-4`}>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-md font-semibold text-white flex items-center gap-2">
+                <span className={`w-3 h-3 rounded-full ${column.color}`} />
+                {column.title}
+              </h4>
+              <Badge className="bg-white/10 text-white">+</Badge>
+            </div>
+            <div className="space-y-3">
+              {tasks
+                .filter(task => task.status === column.status)
+                .map((task) => (
+                  <div key={task.id} className="p-3 border border-white/10 rounded-lg hover:border-white/20 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-sm text-white">{task.title}</p>
+                      <Badge className={`text-xs ${
+                        task.priority === 'high' ? 'bg-red-500/20 text-red-300' :
+                        task.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                        'bg-green-500/20 text-green-300'
+                      }`}>
+                        {task.priority}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-1">{task.description}</p>
+                    <div className="flex items-center justify-between text-xs text-gray-400">
+                      <span>Assigned to: {task.assignedTo}</span>
+                      <span>Due: {task.dueDate}</span>
+                    </div>
                   </div>
-                  
-                  <Droppable droppableId={columnId}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`space-y-2 min-h-80 p-2 rounded-lg transition-colors ${
-                          snapshot.isDraggingOver ? 'bg-white/10' : 'bg-white/5'
-                        }`}
-                      >
-                        {columnTasks.map((task, index) => (
-                          <Draggable key={task.id} draggableId={task.id} index={index}>
-                            {(provided, snapshot) => (
-                              <Card
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`p-3 bg-white/10 border-white/20 cursor-grab active:cursor-grabbing transition-all ${
-                                  snapshot.isDragging ? 'rotate-2 shadow-lg' : ''
-                                }`}
-                              >
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <Badge className={`text-xs ${
-                                      task.priority === 'critical' ? 'bg-red-500/20 text-red-300' :
-                                      task.priority === 'high' ? 'bg-orange-500/20 text-orange-300' :
-                                      task.priority === 'medium' ? 'bg-blue-500/20 text-blue-300' :
-                                      'bg-gray-500/20 text-gray-300'
-                                    }`}>
-                                      {task.priority}
-                                    </Badge>
-                                    <span className="text-xs text-gray-400">{task.storyPoints} pts</span>
-                                  </div>
-                                  
-                                  <h5 className="text-sm font-medium text-white">{task.title}</h5>
-                                  <p className="text-xs text-gray-400">{task.description}</p>
-                                  
-                                  {task.aiSuggestion && (
-                                    <div className="p-2 bg-ai-primary/10 border border-ai-primary/20 rounded text-xs">
-                                      <span className="text-ai-primary font-medium">AI: </span>
-                                      <span className="text-gray-300">{task.aiSuggestion}</span>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex items-center justify-between">
-                                    <Avatar className="w-6 h-6">
-                                      <AvatarFallback className="bg-gradient-ai text-white text-xs">
-                                        {task.assignee.split(' ').map(n => n[0]).join('')}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex space-x-1">
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                                        <GitBranch size={12} />
-                                      </Button>
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                                        <Settings size={12} />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </Card>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </div>
-              ))}
+                ))}
             </div>
-          </DragDropContext>
-        </Card>
+          </Card>
+        ))}
       </div>
+
+      {/* Team Velocity - Full Width */}
+      <Card className="bg-black/20 border-white/10 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-md font-semibold text-white">Team Velocity</h4>
+          <Badge className="bg-blue-500/20 text-blue-300">Sprint 3</Badge>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-3 border border-white/10 rounded-lg">
+            <p className="text-sm font-medium text-gray-300 mb-1">Current Sprint</p>
+            <span className="text-2xl font-bold text-white">{teamVelocity.currentSprint}</span>
+          </div>
+
+          <div className="p-3 border border-white/10 rounded-lg">
+            <p className="text-sm font-medium text-gray-300 mb-1">Average Velocity</p>
+            <span className="text-2xl font-bold text-white">{teamVelocity.average}</span>
+          </div>
+
+          <div className="p-3 border border-white/10 rounded-lg">
+            <p className="text-sm font-medium text-gray-300 mb-1">Trend</p>
+            <span className="text-2xl font-bold text-white">{teamVelocity.trend}</span>
+          </div>
+        </div>
+      </Card>
+
+      {/* AI Sprint Analysis - Full Width */}
+      <Card className="bg-gradient-ai/10 border-ai-primary/20 p-4">
+        <h4 className="text-md font-semibold text-white mb-3">🤖 AI Sprint Analysis</h4>
+        <div className="space-y-3">
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-sm font-medium text-red-300 mb-1">Risk Assessment</p>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-red-400">{aiSprintAnalysis.riskAssessment}</span>
+              <Badge className="bg-red-500/20 text-red-300">High Priority</Badge>
+            </div>
+          </div>
+
+          <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <p className="text-sm font-medium text-yellow-300 mb-1">Potential Blockers</p>
+            <span className="text-sm text-yellow-400">{aiSprintAnalysis.potentialBlockers}</span>
+          </div>
+
+          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <p className="text-sm font-medium text-green-300 mb-1">Recommendations</p>
+            <span className="text-sm text-green-400">{aiSprintAnalysis.recommendations}</span>
+          </div>
+        </div>
+
+        <Button className="w-full mt-4 bg-gradient-ai">
+          Optimize Sprint with AI
+        </Button>
+      </Card>
     </div>
   );
 };

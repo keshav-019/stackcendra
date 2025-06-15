@@ -1,18 +1,25 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Monitor, Settings, Play, GitBranch } from 'lucide-react';
 
-export const VideoCallInterface = () => {
+interface VideoCallInterfaceProps {
+  isManagerMode: boolean;
+}
+
+export const VideoCallInterface = ({ isManagerMode }: VideoCallInterfaceProps) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
+  const [meetingTitle, setMeetingTitle] = useState('');
+  const [meetingTime, setMeetingTime] = useState('');
+  const [meetingType, setMeetingType] = useState('');
 
   const participants = [
     {
@@ -155,142 +162,215 @@ const pool = new Pool({
 });`
   };
 
+  const scheduleInstantMeeting = () => {
+    console.log('Starting instant meeting as manager');
+  };
+
+  const scheduleFutureMeeting = () => {
+    if (!meetingTitle.trim() || !meetingTime) return;
+    
+    console.log('Scheduling meeting:', {
+      title: meetingTitle,
+      time: meetingTime,
+      type: meetingType,
+      scheduledBy: 'Manager'
+    });
+    
+    // Reset form
+    setMeetingTitle('');
+    setMeetingTime('');
+    setMeetingType('');
+  };
+
   return (
-    <div className="h-full grid grid-cols-3 gap-4">
-      {/* Video Grid */}
-      <div className="col-span-2 space-y-4">
-        <Card className="bg-black/20 border-white/10 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Users className="text-blue-400" size={20} />
-              Team Debug Session
-            </h3>
-            <div className="flex items-center space-x-2">
-              <Badge className="bg-red-500/20 text-red-300 animate-pulse">LIVE</Badge>
-              <span className="text-sm text-gray-400">32:15</span>
-            </div>
-          </div>
-
-          {/* Main Speaker View */}
-          <div className="relative mb-4">
-            <div className="video-tile speaking aspect-video rounded-lg p-6 flex items-center justify-center">
-              <div className="text-center">
-                <Avatar className="w-20 h-20 mb-4 mx-auto">
-                  <AvatarFallback className="bg-gradient-ai text-white text-2xl">
-                    {participants.find(p => p.status === 'speaking')?.avatar}
-                  </AvatarFallback>
-                </Avatar>
-                <h4 className="text-xl font-semibold text-white">
-                  {participants.find(p => p.status === 'speaking')?.name}
-                </h4>
-                <p className="text-sm text-gray-400">
-                  {participants.find(p => p.status === 'speaking')?.role}
-                </p>
-              </div>
-              
-              {/* Speaking Indicator */}
-              <div className="absolute top-4 left-4 flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-sm text-green-400 font-medium">Speaking</span>
-              </div>
-
-              {/* Screen Share Indicator */}
-              {participants.find(p => p.sharing) && (
-                <div className="absolute top-4 right-4">
-                  <Badge className="bg-blue-500/20 text-blue-300">
-                    <Monitor size={12} className="mr-1" />
-                    Screen Sharing
-                  </Badge>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Participant Thumbnails */}
-          <div className="grid grid-cols-4 gap-3">
-            {participants.map((participant, index) => (
-              <div key={index} className={`video-tile rounded-lg p-3 flex flex-col items-center justify-center aspect-video ${
-                participant.status === 'speaking' ? 'speaking' : ''
-              }`}>
-                <Avatar className="w-12 h-12 mb-2">
-                  <AvatarFallback className="bg-gradient-ai text-white text-sm">
-                    {participant.avatar}
-                  </AvatarFallback>
-                </Avatar>
-                <p className="text-xs text-white text-center font-medium">{participant.name}</p>
-                <div className="flex items-center space-x-1 mt-1">
-                  {participant.muted && (
-                    <div className="w-2 h-2 bg-red-400 rounded-full" />
-                  )}
-                  {!participant.video && (
-                    <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                  )}
-                  {participant.sharing && (
-                    <div className="w-2 h-2 bg-blue-400 rounded-full" />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Controls */}
-          <div className="flex items-center justify-center space-x-4 mt-6">
-            <Button
-              variant={isMuted ? "destructive" : "secondary"}
-              size="lg"
-              onClick={() => setIsMuted(!isMuted)}
-              className="w-12 h-12 rounded-full p-0"
-            >
-              🎤
-            </Button>
-            <Button
-              variant={isVideoOff ? "destructive" : "secondary"}
-              size="lg"
-              onClick={() => setIsVideoOff(!isVideoOff)}
-              className="w-12 h-12 rounded-full p-0"
-            >
-              📹
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              className="w-12 h-12 rounded-full p-0"
-            >
-              📱
-            </Button>
-            <Button
-              variant="destructive"
-              size="lg"
-              className="px-6 rounded-full"
-            >
-              End Call
-            </Button>
-          </div>
-        </Card>
-
-        {/* Shared Content */}
-        <Card className="bg-black/20 border-white/10 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-md font-semibold text-white">Shared Content</h4>
-            <Badge className="bg-blue-500/20 text-blue-300">
-              Shared by Alex Kumar
-            </Badge>
-          </div>
-          
-          <div className="code-block p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-300">{sharedContent.title}</span>
-              <Button size="sm" variant="outline" className="h-6">
-                <GitBranch size={12} className="mr-1" />
-                Apply
+    <div className="space-y-6">
+      {/* Manager Meeting Controls */}
+      {isManagerMode && (
+        <Card className="bg-yellow-500/10 border-yellow-500/20 p-4">
+          <h4 className="text-md font-semibold text-white mb-3 flex items-center gap-2">
+            👑 Manager: Meeting Controls
+          </h4>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Button onClick={scheduleInstantMeeting} className="bg-green-500/20 text-green-300">
+                Start Instant Meeting
               </Button>
             </div>
-            <pre className="text-sm text-gray-100 overflow-x-auto">
-              <code>{sharedContent.content}</code>
-            </pre>
+            
+            <div className="border-t border-white/10 pt-3">
+              <p className="text-sm text-gray-300 mb-2">Schedule Future Meeting</p>
+              <div className="space-y-2">
+                <Input
+                  placeholder="Meeting title..."
+                  value={meetingTitle}
+                  onChange={(e) => setMeetingTitle(e.target.value)}
+                  className="bg-white/5 border-white/10 text-white"
+                />
+                <div className="flex gap-2">
+                  <Input
+                    type="datetime-local"
+                    value={meetingTime}
+                    onChange={(e) => setMeetingTime(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                  <Select value={meetingType} onValueChange={setMeetingType}>
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standup">Daily Standup</SelectItem>
+                      <SelectItem value="planning">Sprint Planning</SelectItem>
+                      <SelectItem value="review">Code Review</SelectItem>
+                      <SelectItem value="retrospective">Retrospective</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={scheduleFutureMeeting} className="bg-blue-500/20 text-blue-300">
+                    Schedule
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
-      </div>
+      )}
+
+      {/* Video Call Interface - Full Width */}
+      <Card className="bg-gradient-video/10 border-purple-500/20 p-4">
+        {/* Video Grid */}
+        <div className="col-span-2 space-y-4">
+          <Card className="bg-black/20 border-white/10 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Users className="text-blue-400" size={20} />
+                Team Debug Session
+              </h3>
+              <div className="flex items-center space-x-2">
+                <Badge className="bg-red-500/20 text-red-300 animate-pulse">LIVE</Badge>
+                <span className="text-sm text-gray-400">32:15</span>
+              </div>
+            </div>
+
+            {/* Main Speaker View */}
+            <div className="relative mb-4">
+              <div className="video-tile speaking aspect-video rounded-lg p-6 flex items-center justify-center">
+                <div className="text-center">
+                  <Avatar className="w-20 h-20 mb-4 mx-auto">
+                    <AvatarFallback className="bg-gradient-ai text-white text-2xl">
+                      {participants.find(p => p.status === 'speaking')?.avatar}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h4 className="text-xl font-semibold text-white">
+                    {participants.find(p => p.status === 'speaking')?.name}
+                  </h4>
+                  <p className="text-sm text-gray-400">
+                    {participants.find(p => p.status === 'speaking')?.role}
+                  </p>
+                </div>
+                
+                {/* Speaking Indicator */}
+                <div className="absolute top-4 left-4 flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-sm text-green-400 font-medium">Speaking</span>
+                </div>
+
+                {/* Screen Share Indicator */}
+                {participants.find(p => p.sharing) && (
+                  <div className="absolute top-4 right-4">
+                    <Badge className="bg-blue-500/20 text-blue-300">
+                      <Monitor size={12} className="mr-1" />
+                      Screen Sharing
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Participant Thumbnails */}
+            <div className="grid grid-cols-4 gap-3">
+              {participants.map((participant, index) => (
+                <div key={index} className={`video-tile rounded-lg p-3 flex flex-col items-center justify-center aspect-video ${
+                  participant.status === 'speaking' ? 'speaking' : ''
+                }`}>
+                  <Avatar className="w-12 h-12 mb-2">
+                    <AvatarFallback className="bg-gradient-ai text-white text-sm">
+                      {participant.avatar}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-xs text-white text-center font-medium">{participant.name}</p>
+                  <div className="flex items-center space-x-1 mt-1">
+                    {participant.muted && (
+                      <div className="w-2 h-2 bg-red-400 rounded-full" />
+                    )}
+                    {!participant.video && (
+                      <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                    )}
+                    {participant.sharing && (
+                      <div className="w-2 h-2 bg-blue-400 rounded-full" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-center space-x-4 mt-6">
+              <Button
+                variant={isMuted ? "destructive" : "secondary"}
+                size="lg"
+                onClick={() => setIsMuted(!isMuted)}
+                className="w-12 h-12 rounded-full p-0"
+              >
+                🎤
+              </Button>
+              <Button
+                variant={isVideoOff ? "destructive" : "secondary"}
+                size="lg"
+                onClick={() => setIsVideoOff(!isVideoOff)}
+                className="w-12 h-12 rounded-full p-0"
+              >
+                📹
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+                className="w-12 h-12 rounded-full p-0"
+              >
+                📱
+              </Button>
+              <Button
+                variant="destructive"
+                size="lg"
+                className="px-6 rounded-full"
+              >
+                End Call
+              </Button>
+            </div>
+          </Card>
+
+          {/* Shared Content */}
+          <Card className="bg-black/20 border-white/10 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-md font-semibold text-white">Shared Content</h4>
+              <Badge className="bg-blue-500/20 text-blue-300">
+                Shared by Alex Kumar
+              </Badge>
+            </div>
+            
+            <div className="code-block p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-300">{sharedContent.title}</span>
+                <Button size="sm" variant="outline" className="h-6">
+                  <GitBranch size={12} className="mr-1" />
+                  Apply
+                </Button>
+              </div>
+              <pre className="text-sm text-gray-100 overflow-x-auto">
+                <code>{sharedContent.content}</code>
+              </pre>
+            </div>
+          </Card>
+        </div>
+      </Card>
 
       {/* Sidebar - Chat, Notes, Actions */}
       <div className="space-y-4">

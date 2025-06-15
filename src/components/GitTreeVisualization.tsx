@@ -202,130 +202,124 @@ export const GitTreeVisualization = () => {
         </div>
       </Card>
 
-      {/* Bottom Section - Responsive Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Commits */}
-        <Card className="bg-black/20 border-white/10 p-4">
-          <h4 className="text-md font-semibold text-white mb-3">Recent Commits</h4>
-          <ScrollArea className="h-64">
-            <div className="space-y-3">
-              {commitHistory.map((commit, index) => (
-                <div key={index} className="p-3 border border-white/10 rounded-lg hover:border-white/20 transition-colors">
-                  <div className="flex items-center justify-between mb-2">
-                    <code className="text-xs bg-white/10 px-2 py-1 rounded text-blue-300">
-                      {commit.id}
-                    </code>
-                    {commit.aiSuggestion && (
-                      <Badge className="bg-ai-primary/20 text-ai-primary text-xs">AI</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-white mb-1">{commit.message}</p>
-                  <div className="flex items-center justify-between text-xs text-gray-400">
-                    <span>{commit.author}</span>
-                    <span>{commit.timestamp}</span>
-                  </div>
-                  <div className="flex items-center space-x-4 mt-2 text-xs">
-                    <span className="text-green-400">+{commit.additions}</span>
-                    <span className="text-red-400">-{commit.deletions}</span>
-                    <span className="text-gray-400">{commit.files.length} files</span>
-                  </div>
-                </div>
-              ))}
+      {/* Recent Commits - Full Width */}
+      <Card className="bg-black/20 border-white/10 p-4">
+        <h4 className="text-md font-semibold text-white mb-3">Recent Commits</h4>
+        <div className="space-y-3">
+          {commitHistory.map((commit, index) => (
+            <div key={index} className="p-3 border border-white/10 rounded-lg hover:border-white/20 transition-colors">
+              <div className="flex items-center justify-between mb-2">
+                <code className="text-xs bg-white/10 px-2 py-1 rounded text-blue-300">
+                  {commit.id}
+                </code>
+                {commit.aiSuggestion && (
+                  <Badge className="bg-ai-primary/20 text-ai-primary text-xs">AI</Badge>
+                )}
+              </div>
+              <p className="text-sm text-white mb-1">{commit.message}</p>
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <span>{commit.author}</span>
+                <span>{commit.timestamp}</span>
+              </div>
+              <div className="flex items-center space-x-4 mt-2 text-xs">
+                <span className="text-green-400">+{commit.additions}</span>
+                <span className="text-red-400">-{commit.deletions}</span>
+                <span className="text-gray-400">{commit.files.length} files</span>
+              </div>
             </div>
-          </ScrollArea>
-        </Card>
+          ))}
+        </div>
+      </Card>
 
-        {/* Merge Conflicts & Contributors */}
-        <div className="space-y-4">
-          <Card className="bg-red-500/10 border-red-500/20 p-4">
-            <h4 className="text-md font-semibold text-white mb-3 flex items-center gap-2">
-              ⚠️ Merge Conflicts
-            </h4>
-            <div className="space-y-2">
-              {mergeConflicts.map((conflict, index) => (
-                <div key={index} className="p-2 bg-red-500/10 border border-red-500/20 rounded">
-                  <div className="flex items-center justify-between mb-1">
-                    <code className="text-xs text-red-300">{conflict.file}</code>
-                    <Badge className="bg-red-500/20 text-red-300 text-xs">
-                      {conflict.conflicts} conflicts
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-gray-400">{conflict.suggestion}</p>
-                  <Button size="sm" variant="outline" className="mt-2 h-6 text-xs text-red-300 border-red-500/20">
-                    AI Resolve
-                  </Button>
-                </div>
-              ))}
+      {/* Merge Conflicts - Full Width */}
+      <Card className="bg-red-500/10 border-red-500/20 p-4">
+        <h4 className="text-md font-semibold text-white mb-3 flex items-center gap-2">
+          ⚠️ Merge Conflicts
+        </h4>
+        <div className="space-y-2">
+          {mergeConflicts.map((conflict, index) => (
+            <div key={index} className="p-3 bg-red-500/10 border border-red-500/20 rounded">
+              <div className="flex items-center justify-between mb-1">
+                <code className="text-xs text-red-300">{conflict.file}</code>
+                <Badge className="bg-red-500/20 text-red-300 text-xs">
+                  {conflict.conflicts} conflicts
+                </Badge>
+              </div>
+              <p className="text-xs text-gray-400 mb-2">{conflict.suggestion}</p>
+              <Button size="sm" variant="outline" className="h-6 text-xs text-red-300 border-red-500/20">
+                AI Resolve
+              </Button>
             </div>
-          </Card>
+          ))}
+        </div>
+      </Card>
 
-          <Card className="bg-black/20 border-white/10 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-md font-semibold text-white flex items-center gap-2">
-                <Users className="text-blue-400" size={16} />
-                Contributors
-              </h4>
-              <Button size="sm" variant="outline">Invite</Button>
-            </div>
-
-            <div className="space-y-3">
-              {collaborators.map((collaborator, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <div className="relative">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-gradient-ai text-white text-xs">
-                        {collaborator.avatar}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
-                      collaborator.status === 'online' ? 'status-online' :
-                      collaborator.status === 'busy' ? 'status-busy' : 'status-away'
-                    }`} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">{collaborator.name}</p>
-                    <p className="text-xs text-gray-400">{collaborator.commits} commits this week</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+      {/* Contributors - Full Width */}
+      <Card className="bg-black/20 border-white/10 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-md font-semibold text-white flex items-center gap-2">
+            <Users className="text-blue-400" size={16} />
+            Contributors
+          </h4>
+          <Button size="sm" variant="outline">Invite</Button>
         </div>
 
-        {/* AI Git Analysis */}
-        <Card className="bg-gradient-ai/10 border-ai-primary/20 p-4">
-          <h4 className="text-md font-semibold text-white mb-3">🤖 AI Git Analysis</h4>
-          <div className="space-y-3">
-            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <p className="text-sm font-medium text-green-300 mb-1">Code Quality Score</p>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-green-400">94%</span>
-                <Badge className="bg-green-500/20 text-green-300">Excellent</Badge>
+        <div className="space-y-3">
+          {collaborators.map((collaborator, index) => (
+            <div key={index} className="flex items-center space-x-3">
+              <div className="relative">
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className="bg-gradient-ai text-white text-xs">
+                    {collaborator.avatar}
+                  </AvatarFallback>
+                </Avatar>
+                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
+                  collaborator.status === 'online' ? 'status-online' :
+                  collaborator.status === 'busy' ? 'status-busy' : 'status-away'
+                }`} />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white">{collaborator.name}</p>
+                <p className="text-xs text-gray-400">{collaborator.commits} commits this week</p>
               </div>
             </div>
+          ))}
+        </div>
+      </Card>
 
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-sm font-medium text-blue-300 mb-1">Merge Safety</p>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-blue-400">Safe</span>
-                <Badge className="bg-blue-500/20 text-blue-300">Low Risk</Badge>
-              </div>
-            </div>
-
-            <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-              <p className="text-sm font-medium text-purple-300 mb-1">Performance Impact</p>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-purple-400">+40%</span>
-                <Badge className="bg-purple-500/20 text-purple-300">Improvement</Badge>
-              </div>
+      {/* AI Git Analysis - Full Width */}
+      <Card className="bg-gradient-ai/10 border-ai-primary/20 p-4">
+        <h4 className="text-md font-semibold text-white mb-3">🤖 AI Git Analysis</h4>
+        <div className="space-y-3">
+          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <p className="text-sm font-medium text-green-300 mb-1">Code Quality Score</p>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-green-400">94%</span>
+              <Badge className="bg-green-500/20 text-green-300">Excellent</Badge>
             </div>
           </div>
 
-          <Button className="w-full mt-4 bg-gradient-ai">
-            Deploy with AI Recommendations
-          </Button>
-        </Card>
-      </div>
+          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <p className="text-sm font-medium text-blue-300 mb-1">Merge Safety</p>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-blue-400">Safe</span>
+              <Badge className="bg-blue-500/20 text-blue-300">Low Risk</Badge>
+            </div>
+          </div>
+
+          <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+            <p className="text-sm font-medium text-purple-300 mb-1">Performance Impact</p>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-purple-400">+40%</span>
+              <Badge className="bg-purple-500/20 text-purple-300">Improvement</Badge>
+            </div>
+          </div>
+        </div>
+
+        <Button className="w-full mt-4 bg-gradient-ai">
+          Deploy with AI Recommendations
+        </Button>
+      </Card>
     </div>
   );
 };
