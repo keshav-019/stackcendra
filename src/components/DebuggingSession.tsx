@@ -72,28 +72,28 @@ export const DebuggingSession = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Debugging Controls */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
+      <div className="flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <div className={`w-3 h-3 rounded-full ${isDebugging ? 'bg-red-400 animate-pulse' : 'bg-gray-400'}`} />
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium text-white">
               {isDebugging ? 'Debugging Active' : 'Debugging Paused'}
             </span>
           </div>
           <div className="flex space-x-2">
-            <Button size="sm" variant={isDebugging ? "destructive" : "default"} onClick={() => setIsDebugging(!isDebugging)}>
+            <Button size="sm" variant={isDebugging ? "destructive" : "default"} onClick={() => setIsDebugging(!isDebugging)} className="bg-ai-primary hover:bg-ai-primary/80">
               {isDebugging ? <Pause size={16} /> : <Play size={16} />}
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10">
               <Square size={16} />
             </Button>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
-          <Badge variant="outline">3 Services</Badge>
-          <Badge variant="outline">2 Active Issues</Badge>
-          <Button size="sm" variant="outline">
+          <Badge variant="outline" className="border-blue-400/50 text-blue-300">3 Services</Badge>
+          <Badge variant="outline" className="border-red-400/50 text-red-300">2 Active Issues</Badge>
+          <Button size="sm" variant="outline" className="border-ai-primary/50 text-ai-primary hover:bg-ai-primary/10">
             <Bug size={16} className="mr-2" />
             AI Analyze
           </Button>
@@ -102,7 +102,7 @@ export const DebuggingSession = () => {
 
       <div className="flex-1 p-4">
         <Tabs defaultValue="logs" className="h-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-4 bg-white/5">
             <TabsTrigger value="logs">Debug Logs</TabsTrigger>
             <TabsTrigger value="ai">AI Analysis</TabsTrigger>
             <TabsTrigger value="breakpoints">Breakpoints</TabsTrigger>
@@ -135,7 +135,7 @@ export const DebuggingSession = () => {
                         </div>
                         <p className="text-sm text-gray-300 mb-2">{log.message}</p>
                         {log.stack && (
-                          <pre className="text-xs text-gray-500 bg-black/30 p-2 rounded font-mono">
+                          <pre className="text-xs text-gray-500 bg-slate-800/50 p-2 rounded font-mono">
                             {log.stack}
                           </pre>
                         )}
@@ -166,7 +166,7 @@ export const DebuggingSession = () => {
                 </p>
                 <div className="space-y-3">
                   {aiSuggestions.map((suggestion, index) => (
-                    <div key={index} className="bg-black/30 p-3 rounded border border-white/10">
+                    <div key={index} className="bg-slate-800/30 p-3 rounded border border-white/10">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
                           <Badge variant={suggestion.priority === 'high' ? 'destructive' : suggestion.priority === 'medium' ? 'default' : 'outline'}>
@@ -176,7 +176,7 @@ export const DebuggingSession = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                           <span className="text-xs text-gray-400">{suggestion.confidence}% confidence</span>
-                          <Button size="sm" variant="outline" className="text-xs">
+                          <Button size="sm" variant="outline" className="text-xs border-ai-primary/50 text-ai-primary hover:bg-ai-primary/10">
                             {suggestion.action}
                           </Button>
                         </div>
@@ -200,14 +200,14 @@ export const DebuggingSession = () => {
                         <div>
                           <div className="flex items-center space-x-2">
                             <span className="font-medium text-sm">{bp.file}</span>
-                            <Badge variant="outline" className="text-xs">Line {bp.line}</Badge>
+                            <Badge variant="outline" className="text-xs border-blue-400/50 text-blue-300">Line {bp.line}</Badge>
                           </div>
                           {bp.condition && (
                             <p className="text-xs text-gray-400 mt-1">Condition: {bp.condition}</p>
                           )}
                         </div>
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" className="border-ai-primary/50 text-ai-primary hover:bg-ai-primary/10">
                         {bp.active ? 'Disable' : 'Enable'}
                       </Button>
                     </div>
