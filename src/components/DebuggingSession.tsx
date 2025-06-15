@@ -3,277 +3,270 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Play, Monitor, GitBranch, Settings, Users } from 'lucide-react';
+import { Play, Pause, Square, Bug, Zap, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export const DebuggingSession = () => {
-  const [activeBreakpoints, setActiveBreakpoints] = useState(3);
-  const [debugProgress, setDebugProgress] = useState(67);
+  const [isDebugging, setIsDebugging] = useState(true);
+  const [selectedLog, setSelectedLog] = useState(0);
 
-  const errorLogs = [
+  const debugLogs = [
     {
-      timestamp: '2024-01-15 14:32:17',
+      timestamp: '14:23:15.332',
       level: 'ERROR',
       service: 'payment-service',
-      message: 'Connection timeout after 5000ms',
-      stackTrace: 'at ConnectionPool.acquire (/app/src/db/pool.js:45:12)',
-      occurrences: 47
+      message: 'Connection timeout to database',
+      stack: 'at PaymentProcessor.process (payment.js:45)\n  at OrderHandler.handle (order.js:123)',
+      resolved: false
     },
     {
-      timestamp: '2024-01-15 14:31:54',
+      timestamp: '14:23:16.445',
       level: 'WARN',
       service: 'user-service',
-      message: 'High memory usage detected: 89%',
-      stackTrace: 'at MemoryMonitor.checkUsage (/app/src/monitor.js:23:8)',
-      occurrences: 12
+      message: 'High memory usage detected: 91%',
+      stack: null,
+      resolved: false
     },
     {
-      timestamp: '2024-01-15 14:31:32',
-      level: 'ERROR',
-      service: 'payment-service',
-      message: 'Database connection pool exhausted',
-      stackTrace: 'at Pool.connect (/app/node_modules/pg/lib/pool.js:104:15)',
-      occurrences: 23
+      timestamp: '14:23:17.556',
+      level: 'INFO',
+      service: 'api-gateway',
+      message: 'Circuit breaker opened for payment-service',
+      stack: null,
+      resolved: true
     }
   ];
 
-  const teamMembers = [
-    { name: 'Sarah Chen', role: 'DevOps Lead', status: 'debugging', avatar: 'SC' },
-    { name: 'Mike Rodriguez', role: 'Backend Dev', status: 'reviewing', avatar: 'MR' },
-    { name: 'Alex Kumar', role: 'AI Engineer', status: 'analyzing', avatar: 'AK' }
+  const aiSuggestions = [
+    {
+      priority: 'high',
+      title: 'Database Connection Pool',
+      description: 'Increase connection pool size from 10 to 25 connections',
+      confidence: 92,
+      action: 'Apply Fix'
+    },
+    {
+      priority: 'medium',
+      title: 'Memory Optimization',
+      description: 'Add garbage collection hints for user-service',
+      confidence: 78,
+      action: 'Review Code'
+    },
+    {
+      priority: 'low',
+      title: 'Circuit Breaker Timeout',
+      description: 'Adjust timeout from 30s to 45s for payment operations',
+      confidence: 65,
+      action: 'Test Change'
+    }
   ];
 
-  const debugSteps = [
-    { step: 1, title: 'Error Detection', status: 'completed', description: 'AI detected anomalous error patterns' },
-    { step: 2, title: 'Root Cause Analysis', status: 'completed', description: 'Database connection pool identified as bottleneck' },
-    { step: 3, title: 'Impact Assessment', status: 'in-progress', description: 'Analyzing affected user sessions' },
-    { step: 4, title: 'Solution Generation', status: 'pending', description: 'AI generating optimized fixes' },
-    { step: 5, title: 'Deployment Planning', status: 'pending', description: 'Creating rollout strategy' }
+  const currentBreakpoints = [
+    { file: 'payment.js', line: 45, condition: 'amount > 1000', active: true },
+    { file: 'order.js', line: 123, condition: null, active: false },
+    { file: 'user.js', line: 67, condition: 'user.premium === true', active: true }
   ];
 
   return (
-    <div className="h-full grid grid-cols-3 gap-4">
-      {/* Left Column - Error Analysis */}
-      <div className="space-y-4">
-        <Card className="bg-black/20 border-red-500/20 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Monitor className="text-red-400" size={20} />
-              Critical Issues
-            </h3>
-            <Badge className="bg-red-500/20 text-red-300">High Priority</Badge>
+    <div className="h-full flex flex-col">
+      {/* Debugging Controls */}
+      <div className="flex items-center justify-between p-4 border-b border-white/10">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <div className={`w-3 h-3 rounded-full ${isDebugging ? 'bg-red-400 animate-pulse' : 'bg-gray-400'}`} />
+            <span className="text-sm font-medium">
+              {isDebugging ? 'Debugging Active' : 'Debugging Paused'}
+            </span>
           </div>
-          
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-300">Active Errors</span>
-              <span className="text-2xl font-bold text-red-400">82</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-300">Affected Users</span>
-              <span className="text-2xl font-bold text-orange-400">1,247</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-300">Uptime</span>
-              <span className="text-2xl font-bold text-yellow-400">94.3%</span>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-300">Resolution Progress</span>
-              <span className="text-sm text-white">{debugProgress}%</span>
-            </div>
-            <Progress value={debugProgress} className="h-2" />
-          </div>
-        </Card>
-
-        <Card className="bg-black/20 border-white/10 p-4">
-          <h4 className="text-md font-semibold text-white mb-3">Real-time Error Log</h4>
-          <ScrollArea className="h-64">
-            <div className="space-y-2">
-              {errorLogs.map((log, index) => (
-                <div key={index} className={`p-3 rounded-lg border ${
-                  log.level === 'ERROR' ? 'bg-red-500/10 border-red-500/20' : 'bg-yellow-500/10 border-yellow-500/20'
-                }`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <Badge className={`text-xs ${
-                      log.level === 'ERROR' ? 'bg-red-500/20 text-red-300' : 'bg-yellow-500/20 text-yellow-300'
-                    }`}>
-                      {log.level}
-                    </Badge>
-                    <span className="text-xs text-gray-400">{log.timestamp}</span>
-                  </div>
-                  <p className="text-sm text-white mb-1">{log.message}</p>
-                  <p className="text-xs text-gray-400 font-mono">{log.service}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-gray-400">{log.stackTrace}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {log.occurrences}x
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </Card>
-      </div>
-
-      {/* Center Column - AI Debugging Process */}
-      <div className="space-y-4">
-        <Card className="bg-gradient-ai/10 border-ai-primary/20 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              🤖 AI Debugging Process
-            </h3>
-            <Button size="sm" className="bg-gradient-ai">
-              <Play size={16} className="mr-1" />
-              Auto-Fix
+          <div className="flex space-x-2">
+            <Button size="sm" variant={isDebugging ? "destructive" : "default"} onClick={() => setIsDebugging(!isDebugging)}>
+              {isDebugging ? <Pause size={16} /> : <Play size={16} />}
+            </Button>
+            <Button size="sm" variant="outline">
+              <Square size={16} />
             </Button>
           </div>
-
-          <div className="space-y-3">
-            {debugSteps.map((step) => (
-              <div key={step.step} className="flex items-start space-x-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                  step.status === 'completed' ? 'bg-green-500/20 text-green-300' :
-                  step.status === 'in-progress' ? 'bg-blue-500/20 text-blue-300 animate-pulse' :
-                  'bg-gray-500/20 text-gray-400'
-                }`}>
-                  {step.step}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white">{step.title}</p>
-                  <p className="text-xs text-gray-400">{step.description}</p>
-                  {step.status === 'in-progress' && (
-                    <div className="mt-2">
-                      <Progress value={75} className="h-1" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="bg-black/20 border-white/10 p-4">
-          <h4 className="text-md font-semibold text-white mb-3">AI Recommendations</h4>
-          <div className="space-y-3">
-            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-green-300">Database Optimization</span>
-                <Badge className="bg-green-500/20 text-green-300">92% Success Rate</Badge>
-              </div>
-              <p className="text-xs text-gray-300">Increase connection pool size and add circuit breaker pattern</p>
-              <Button size="sm" variant="outline" className="mt-2 text-green-300 border-green-500/20">
-                Apply Fix
-              </Button>
-            </div>
-
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-blue-300">Memory Management</span>
-                <Badge className="bg-blue-500/20 text-blue-300">87% Success Rate</Badge>
-              </div>
-              <p className="text-xs text-gray-300">Implement garbage collection optimization for user-service</p>
-              <Button size="sm" variant="outline" className="mt-2 text-blue-300 border-blue-500/20">
-                Schedule Fix
-              </Button>
-            </div>
-
-            <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-purple-300">Monitoring Enhancement</span>
-                <Badge className="bg-purple-500/20 text-purple-300">Auto-Deploy</Badge>
-              </div>
-              <p className="text-xs text-gray-300">Add predictive alerts to prevent similar issues</p>
-              <Button size="sm" variant="outline" className="mt-2 text-purple-300 border-purple-500/20">
-                Deploy Now
-              </Button>
-            </div>
-          </div>
-        </Card>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <Badge variant="outline">3 Services</Badge>
+          <Badge variant="outline">2 Active Issues</Badge>
+          <Button size="sm" variant="outline">
+            <Bug size={16} className="mr-2" />
+            AI Analyze
+          </Button>
+        </div>
       </div>
 
-      {/* Right Column - Team Collaboration */}
-      <div className="space-y-4">
-        <Card className="bg-black/20 border-white/10 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Users className="text-blue-400" size={20} />
-              Debug Team
-            </h3>
-            <Button size="sm" variant="outline">Join Session</Button>
-          </div>
+      <div className="flex-1 p-4">
+        <Tabs defaultValue="logs" className="h-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="logs">Debug Logs</TabsTrigger>
+            <TabsTrigger value="ai">AI Analysis</TabsTrigger>
+            <TabsTrigger value="breakpoints">Breakpoints</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-3">
-            {teamMembers.map((member, index) => (
-              <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/5">
-                <Avatar className="w-10 h-10">
-                  <AvatarFallback className="bg-gradient-ai text-white text-sm">
-                    {member.avatar}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white">{member.name}</p>
-                  <p className="text-xs text-gray-400">{member.role}</p>
+          <TabsContent value="logs" className="mt-4 h-[calc(100%-3rem)]">
+            <ScrollArea className="h-full">
+              <div className="space-y-2">
+                {debugLogs.map((log, index) => (
+                  <Card 
+                    key={index} 
+                    className={`p-4 cursor-pointer transition-colors ${
+                      selectedLog === index ? 'bg-white/10 border-white/20' : 'bg-white/5 border-white/10'
+                    }`}
+                    onClick={() => setSelectedLog(index)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <Badge className={`text-xs ${
+                            log.level === 'ERROR' ? 'bg-red-500' :
+                            log.level === 'WARN' ? 'bg-yellow-500' :
+                            'bg-blue-500'
+                          }`}>
+                            {log.level}
+                          </Badge>
+                          <span className="text-sm font-medium">{log.service}</span>
+                          <span className="text-xs text-gray-400">{log.timestamp}</span>
+                        </div>
+                        <p className="text-sm text-gray-300 mb-2">{log.message}</p>
+                        {log.stack && (
+                          <pre className="text-xs text-gray-500 bg-black/30 p-2 rounded font-mono">
+                            {log.stack}
+                          </pre>
+                        )}
+                      </div>
+                      <div className="ml-4">
+                        {log.resolved ? (
+                          <CheckCircle size={16} className="text-green-400" />
+                        ) : (
+                          <AlertTriangle size={16} className="text-red-400" />
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="ai" className="mt-4 h-[calc(100%-3rem)]">
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 p-4 rounded-lg border border-white/10">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Zap size={16} className="text-yellow-400" />
+                  <span className="font-medium">AI Debugging Assistant</span>
                 </div>
-                <Badge className={`text-xs ${
-                  member.status === 'debugging' ? 'bg-red-500/20 text-red-300' :
-                  member.status === 'reviewing' ? 'bg-blue-500/20 text-blue-300' :
-                  'bg-green-500/20 text-green-300'
-                }`}>
-                  {member.status}
-                </Badge>
+                <p className="text-sm text-gray-300 mb-3">
+                  Analyzing microservices architecture... Found 2 critical issues affecting payment processing.
+                </p>
+                <div className="space-y-3">
+                  {aiSuggestions.map((suggestion, index) => (
+                    <div key={index} className="bg-black/30 p-3 rounded border border-white/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={suggestion.priority === 'high' ? 'destructive' : suggestion.priority === 'medium' ? 'default' : 'outline'}>
+                            {suggestion.priority}
+                          </Badge>
+                          <span className="font-medium text-sm">{suggestion.title}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-400">{suggestion.confidence}% confidence</span>
+                          <Button size="sm" variant="outline" className="text-xs">
+                            {suggestion.action}
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-400">{suggestion.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <h4 className="text-sm font-medium text-white mb-2">Session Activity</h4>
-            <div className="space-y-2 text-xs text-gray-400">
-              <p>• Sarah identified connection pool bottleneck</p>
-              <p>• Mike suggested circuit breaker implementation</p>
-              <p>• AI generated optimized configuration</p>
-              <p>• Alex approved performance improvements</p>
             </div>
-          </div>
-        </Card>
+          </TabsContent>
 
-        <Card className="bg-black/20 border-white/10 p-4">
-          <h4 className="text-md font-semibold text-white mb-3">Performance Metrics</h4>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-300">Response Time</span>
-                <span className="text-xl font-bold text-red-400">2.4s</span>
+          <TabsContent value="breakpoints" className="mt-4 h-[calc(100%-3rem)]">
+            <ScrollArea className="h-full">
+              <div className="space-y-2">
+                {currentBreakpoints.map((bp, index) => (
+                  <Card key={index} className="p-4 bg-white/5 border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${bp.active ? 'bg-red-400' : 'bg-gray-400'}`} />
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-sm">{bp.file}</span>
+                            <Badge variant="outline" className="text-xs">Line {bp.line}</Badge>
+                          </div>
+                          {bp.condition && (
+                            <p className="text-xs text-gray-400 mt-1">Condition: {bp.condition}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        {bp.active ? 'Disable' : 'Enable'}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
-              <Progress value={80} className="h-2" />
-              <p className="text-xs text-gray-400 mt-1">Target: <1s</p>
-            </div>
+            </ScrollArea>
+          </TabsContent>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-300">Error Rate</span>
-                <span className="text-xl font-bold text-orange-400">4.7%</span>
+          <TabsContent value="performance" className="mt-4 h-[calc(100%-3rem)]">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-4 bg-white/5 border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">CPU Usage</span>
+                    <span className="text-sm text-red-400">87%</span>
+                  </div>
+                  <Progress value={87} className="h-2" />
+                </Card>
+                <Card className="p-4 bg-white/5 border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Memory Usage</span>
+                    <span className="text-sm text-yellow-400">73%</span>
+                  </div>
+                  <Progress value={73} className="h-2" />
+                </Card>
               </div>
-              <Progress value={47} className="h-2" />
-              <p className="text-xs text-gray-400 mt-1">Target: <1%</p>
+              
+              <Card className="p-4 bg-white/5 border-white/10">
+                <h4 className="font-medium mb-3">Service Response Times</h4>
+                <div className="space-y-3">
+                  {[
+                    { service: 'payment-service', time: '2.3s', status: 'slow' },
+                    { service: 'user-service', time: '120ms', status: 'normal' },
+                    { service: 'order-service', time: '45ms', status: 'fast' }
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm">{item.service}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-sm ${
+                          item.status === 'slow' ? 'text-red-400' :
+                          item.status === 'normal' ? 'text-yellow-400' :
+                          'text-green-400'
+                        }`}>
+                          {item.time}
+                        </span>
+                        <div className={`w-2 h-2 rounded-full ${
+                          item.status === 'slow' ? 'bg-red-400' :
+                          item.status === 'normal' ? 'bg-yellow-400' :
+                          'bg-green-400'
+                        }`} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-300">CPU Usage</span>
-                <span className="text-xl font-bold text-yellow-400">78%</span>
-              </div>
-              <Progress value={78} className="h-2" />
-              <p className="text-xs text-gray-400 mt-1">Target: <70%</p>
-            </div>
-          </div>
-        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
