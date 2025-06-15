@@ -9,6 +9,7 @@ import { DockerTopology } from '@/components/DockerTopology';
 import { DebuggingSession } from '@/components/DebuggingSession';
 import { SprintPlanning } from '@/components/SprintPlanning';
 import { VideoCallInterface } from '@/components/VideoCallInterface';
+import { MyTasks } from '@/components/MyTasks';
 import { BottomDock } from '@/components/BottomDock';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { UserDropdown } from '@/components/UserDropdown';
@@ -51,7 +52,7 @@ export const UnifiedDashboard = () => {
           {/* Tabbed Interface */}
           <div className="flex-1 flex flex-col p-4 overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-              <TabsList className="grid w-full grid-cols-5 mb-4 bg-black/20 flex-shrink-0">
+              <TabsList className={`grid w-full ${isManagerMode ? 'grid-cols-5' : 'grid-cols-6'} mb-4 bg-black/20 flex-shrink-0`}>
                 <TabsTrigger value="debugging" className="flex items-center gap-2">
                   <Monitor size={16} />
                   Debug Session
@@ -72,6 +73,12 @@ export const UnifiedDashboard = () => {
                   <Users size={16} />
                   Team Call
                 </TabsTrigger>
+                {!isManagerMode && (
+                  <TabsTrigger value="mytasks" className="flex items-center gap-2">
+                    <Users size={16} />
+                    My Tasks
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <div className="flex-1 overflow-hidden">
@@ -104,6 +111,14 @@ export const UnifiedDashboard = () => {
                     <VideoCallInterface isManagerMode={isManagerMode} />
                   </div>
                 </TabsContent>
+
+                {!isManagerMode && (
+                  <TabsContent value="mytasks" className="h-full">
+                    <div className="h-full overflow-y-auto pr-2">
+                      <MyTasks />
+                    </div>
+                  </TabsContent>
+                )}
               </div>
             </Tabs>
           </div>

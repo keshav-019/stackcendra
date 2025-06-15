@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Monitor, Settings, Play, GitBranch } from 'lucide-react';
+import { Users, Monitor, Settings, Play, GitBranch, Calendar } from 'lucide-react';
 
 interface VideoCallInterfaceProps {
   isManagerMode: boolean;
@@ -161,6 +161,39 @@ const pool = new Pool({
   allowExitOnIdle: true
 });`
   };
+
+  const scheduledCalls = [
+    {
+      id: 1,
+      title: 'Sprint Retrospective',
+      date: '2024-03-16',
+      time: '2:00 PM',
+      duration: '1 hour',
+      participants: ['Sarah Chen', 'Mike Rodriguez', 'Alex Kumar', 'Lisa Park'],
+      type: 'retrospective',
+      status: 'upcoming'
+    },
+    {
+      id: 2,
+      title: 'Code Review Session',
+      date: '2024-03-17',
+      time: '10:00 AM',
+      duration: '45 minutes',
+      participants: ['Sarah Chen', 'Alex Kumar'],
+      type: 'review',
+      status: 'upcoming'
+    },
+    {
+      id: 3,
+      title: 'Daily Standup',
+      date: '2024-03-15',
+      time: '9:00 AM',
+      duration: '15 minutes',
+      participants: ['Sarah Chen', 'Mike Rodriguez', 'Alex Kumar', 'Lisa Park'],
+      type: 'standup',
+      status: 'completed'
+    }
+  ];
 
   const scheduleInstantMeeting = () => {
     console.log('Starting instant meeting as manager');
@@ -369,6 +402,84 @@ const pool = new Pool({
               </pre>
             </div>
           </Card>
+        </div>
+      </Card>
+
+      {/* Scheduled Calls Section */}
+      <Card className="bg-black/20 border-white/10 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-md font-semibold text-white flex items-center gap-2">
+            <Calendar className="text-purple-400" size={20} />
+            Scheduled Calls
+          </h4>
+          <Badge className="bg-purple-500/20 text-purple-300">
+            {scheduledCalls.filter(call => call.status === 'upcoming').length} Upcoming
+          </Badge>
+        </div>
+
+        <div className="space-y-3">
+          {scheduledCalls.map((call) => (
+            <div key={call.id} className={`p-3 rounded-lg border ${
+              call.status === 'upcoming' ? 'bg-purple-500/10 border-purple-500/20' : 'bg-gray-500/10 border-gray-500/20'
+            }`}>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h5 className="text-sm font-semibold text-white">{call.title}</h5>
+                  <p className="text-xs text-gray-400">
+                    {call.date} at {call.time} • {call.duration}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className={`text-xs ${
+                    call.type === 'standup' ? 'bg-blue-500/20 text-blue-300' :
+                    call.type === 'review' ? 'bg-green-500/20 text-green-300' :
+                    call.type === 'retrospective' ? 'bg-yellow-500/20 text-yellow-300' :
+                    'bg-purple-500/20 text-purple-300'
+                  }`}>
+                    {call.type}
+                  </Badge>
+                  <Badge className={`text-xs ${
+                    call.status === 'upcoming' ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-300'
+                  }`}>
+                    {call.status}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">Participants:</span>
+                  <div className="flex -space-x-1">
+                    {call.participants.slice(0, 3).map((participant, index) => (
+                      <Avatar key={index} className="w-6 h-6 border border-white/20">
+                        <AvatarFallback className="bg-gradient-ai text-white text-xs">
+                          {participant.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {call.participants.length > 3 && (
+                      <div className="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center text-xs text-white">
+                        +{call.participants.length - 3}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {call.status === 'upcoming' && (
+                  <div className="flex gap-2">
+                    <Button size="sm" className="bg-green-500/20 text-green-300 text-xs">
+                      Join
+                    </Button>
+                    {isManagerMode && (
+                      <Button size="sm" variant="outline" className="text-white border-white/20 text-xs">
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </Card>
 
