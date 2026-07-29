@@ -6,15 +6,15 @@ Use this page to review and correct the plan before feature implementation begin
 
 ## Recommended review order
 
-1. [Product Vision and Scope](Product-Vision-and-Scope.md)
-2. [Users and Jobs to Be Done](Users-and-Jobs-to-Be-Done.md)
-3. [Phase Delivery Framework](Phase-Delivery-Framework.md)
-4. [Roadmap](Roadmap.md)
+1. [Product Vision and Scope](https://github.com/keshav-019/stackcendra/wiki/Product-Vision-and-Scope)
+2. [Users and Jobs to Be Done](https://github.com/keshav-019/stackcendra/wiki/Users-and-Jobs-to-Be-Done)
+3. [Phase Delivery Framework](https://github.com/keshav-019/stackcendra/wiki/Phase-Delivery-Framework)
+4. [Roadmap](https://github.com/keshav-019/stackcendra/wiki/Roadmap)
 5. Phases 0–3, which define the product wedge
-6. [Security and Trust Model](Security-and-Trust-Model.md)
+6. [Security and Trust Model](https://github.com/keshav-019/stackcendra/wiki/Security-and-Trust-Model)
 7. Phases 4–13
-8. [Flagship Demonstration](Flagship-Demonstration.md)
-9. [Risks Non-Goals and Decision Log](Risks-Non-Goals-and-Decision-Log.md)
+8. [Flagship Demonstration](https://github.com/keshav-019/stackcendra/wiki/Flagship-Demonstration)
+9. [Risks Non-Goals and Decision Log](https://github.com/keshav-019/stackcendra/wiki/Risks-Non-Goals-and-Decision-Log)
 
 ## Decisions most worth correcting now
 

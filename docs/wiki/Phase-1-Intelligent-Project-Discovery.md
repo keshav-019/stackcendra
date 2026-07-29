@@ -14,7 +14,7 @@ This is the first compelling public demonstration and the factual foundation for
 - Primary owner: Rust local agent
 - Supporting surfaces: shared React project view and contract package
 
-The detailed release contract is defined in [Release 0.1 Project Discovery](Release-0.1-Project-Discovery.md). This page defines how the capability is delivered and handed to later phases.
+The detailed release contract is defined in [Release 0.1 Project Discovery](https://github.com/keshav-019/stackcendra/wiki/Release-0.1-Project-Discovery). This page defines how the capability is delivered and handed to later phases.
 
 ## Prerequisites
 

@@ -20,50 +20,50 @@ The first useful versions of StackCendra must answer that question better than a
 
 ### Product
 
-- [Product Vision and Scope](Product-Vision-and-Scope.md)
-- [Users and Jobs to Be Done](Users-and-Jobs-to-Be-Done.md)
-- [Product Areas and Information Architecture](Product-Areas-and-Information-Architecture.md)
-- [Glossary](Glossary.md)
-- [Flagship Demonstration](Flagship-Demonstration.md)
+- [Product Vision and Scope](https://github.com/keshav-019/stackcendra/wiki/Product-Vision-and-Scope)
+- [Users and Jobs to Be Done](https://github.com/keshav-019/stackcendra/wiki/Users-and-Jobs-to-Be-Done)
+- [Product Areas and Information Architecture](https://github.com/keshav-019/stackcendra/wiki/Product-Areas-and-Information-Architecture)
+- [Glossary](https://github.com/keshav-019/stackcendra/wiki/Glossary)
+- [Flagship Demonstration](https://github.com/keshav-019/stackcendra/wiki/Flagship-Demonstration)
 
 ### Planning
 
-- [Phase 0 Foundation](Phase-0-Foundation.md)
-- [Phase 0 Execution Backlog](Phase-0-Execution-Backlog.md)
-- [Release 0.1 Project Discovery](Release-0.1-Project-Discovery.md)
-- [Phase Delivery Framework](Phase-Delivery-Framework.md)
-- [Roadmap](Roadmap.md)
-- [Wiki Review Guide](Wiki-Review-Guide.md)
-- [Risks Non-Goals and Decision Log](Risks-Non-Goals-and-Decision-Log.md)
+- [Phase 0 Foundation](https://github.com/keshav-019/stackcendra/wiki/Phase-0-Foundation)
+- [Phase 0 Execution Backlog](https://github.com/keshav-019/stackcendra/wiki/Phase-0-Execution-Backlog)
+- [Release 0.1 Project Discovery](https://github.com/keshav-019/stackcendra/wiki/Release-0.1-Project-Discovery)
+- [Phase Delivery Framework](https://github.com/keshav-019/stackcendra/wiki/Phase-Delivery-Framework)
+- [Roadmap](https://github.com/keshav-019/stackcendra/wiki/Roadmap)
+- [Wiki Review Guide](https://github.com/keshav-019/stackcendra/wiki/Wiki-Review-Guide)
+- [Risks Non-Goals and Decision Log](https://github.com/keshav-019/stackcendra/wiki/Risks-Non-Goals-and-Decision-Log)
 
 ### Capability phases
 
 | Phase | Specification |
 | --- | --- |
-| 0 | [Foundation and Product Architecture](Phase-0-Foundation.md) |
-| 1 | [Intelligent Local Project Discovery](Phase-1-Intelligent-Project-Discovery.md) |
-| 2 | [Local Environment Manager](Phase-2-Local-Environment-Manager.md) |
-| 3 | [Configuration Intelligence](Phase-3-Configuration-Intelligence.md) |
-| 4 | [Secure SSH Client and Keychain](Phase-4-Secure-SSH-and-Keychain.md) |
-| 5 | [Shortcuts, Snippets, and Actions](Phase-5-Actions-and-Remote-Operations.md) |
-| 6 | [Visual Automation Flows](Phase-6-Visual-Automation-Flows.md) |
-| 7 | [Git Intelligence and Delivery](Phase-7-Git-Intelligence-and-Delivery.md) |
-| 8 | [Docker and Kubernetes Operations](Phase-8-Docker-and-Kubernetes-Operations.md) |
-| 9 | [Multi-Cloud Support](Phase-9-Multi-Cloud-Support.md) |
-| 10 | [Observability and Incident Intelligence](Phase-10-Observability-and-Incident-Intelligence.md) |
-| 11 | [Production-to-Local Reproduction](Phase-11-Production-to-Local-Reproduction.md) |
-| 12 | [Real-Time Collaboration](Phase-12-Real-Time-Collaboration.md) |
-| 13 | [Governance and Enterprise Readiness](Phase-13-Governance-and-Enterprise-Readiness.md) |
+| 0 | [Foundation and Product Architecture](https://github.com/keshav-019/stackcendra/wiki/Phase-0-Foundation) |
+| 1 | [Intelligent Local Project Discovery](https://github.com/keshav-019/stackcendra/wiki/Phase-1-Intelligent-Project-Discovery) |
+| 2 | [Local Environment Manager](https://github.com/keshav-019/stackcendra/wiki/Phase-2-Local-Environment-Manager) |
+| 3 | [Configuration Intelligence](https://github.com/keshav-019/stackcendra/wiki/Phase-3-Configuration-Intelligence) |
+| 4 | [Secure SSH Client and Keychain](https://github.com/keshav-019/stackcendra/wiki/Phase-4-Secure-SSH-and-Keychain) |
+| 5 | [Shortcuts, Snippets, and Actions](https://github.com/keshav-019/stackcendra/wiki/Phase-5-Actions-and-Remote-Operations) |
+| 6 | [Visual Automation Flows](https://github.com/keshav-019/stackcendra/wiki/Phase-6-Visual-Automation-Flows) |
+| 7 | [Git Intelligence and Delivery](https://github.com/keshav-019/stackcendra/wiki/Phase-7-Git-Intelligence-and-Delivery) |
+| 8 | [Docker and Kubernetes Operations](https://github.com/keshav-019/stackcendra/wiki/Phase-8-Docker-and-Kubernetes-Operations) |
+| 9 | [Multi-Cloud Support](https://github.com/keshav-019/stackcendra/wiki/Phase-9-Multi-Cloud-Support) |
+| 10 | [Observability and Incident Intelligence](https://github.com/keshav-019/stackcendra/wiki/Phase-10-Observability-and-Incident-Intelligence) |
+| 11 | [Production-to-Local Reproduction](https://github.com/keshav-019/stackcendra/wiki/Phase-11-Production-to-Local-Reproduction) |
+| 12 | [Real-Time Collaboration](https://github.com/keshav-019/stackcendra/wiki/Phase-12-Real-Time-Collaboration) |
+| 13 | [Governance and Enterprise Readiness](https://github.com/keshav-019/stackcendra/wiki/Phase-13-Governance-and-Enterprise-Readiness) |
 
 ### Engineering
 
-- [System Architecture](System-Architecture.md)
-- [Security and Trust Model](Security-and-Trust-Model.md)
-- [Data Contracts and Events](Data-Contracts-and-Events.md)
-- [Local Development Environment](Local-Development-Environment.md)
-- [Toolchain Setup Record](Toolchain-Setup-Record.md)
-- [Testing Quality and Observability](Testing-Quality-and-Observability.md)
-- [Architecture Decisions](Architecture-Decisions.md)
+- [System Architecture](https://github.com/keshav-019/stackcendra/wiki/System-Architecture)
+- [Security and Trust Model](https://github.com/keshav-019/stackcendra/wiki/Security-and-Trust-Model)
+- [Data Contracts and Events](https://github.com/keshav-019/stackcendra/wiki/Data-Contracts-and-Events)
+- [Local Development Environment](https://github.com/keshav-019/stackcendra/wiki/Local-Development-Environment)
+- [Toolchain Setup Record](https://github.com/keshav-019/stackcendra/wiki/Toolchain-Setup-Record)
+- [Testing Quality and Observability](https://github.com/keshav-019/stackcendra/wiki/Testing-Quality-and-Observability)
+- [Architecture Decisions](https://github.com/keshav-019/stackcendra/wiki/Architecture-Decisions)
 
 ## Phase 0 exit summary
 

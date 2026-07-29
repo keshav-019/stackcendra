@@ -4,7 +4,7 @@
 
 Each release must complete a user outcome and produce a demonstrable artifact. Dates are forecasts, not promises; gates are based on evidence.
 
-A capability phase is an engineering dependency boundary; a public release is a useful product package. They are not required to map one-to-one. See [Phase Delivery Framework](Phase-Delivery-Framework.md).
+A capability phase is an engineering dependency boundary; a public release is a useful product package. They are not required to map one-to-one. See [Phase Delivery Framework](https://github.com/keshav-019/stackcendra/wiki/Phase-Delivery-Framework).
 
 ## Foundation
 
@@ -12,7 +12,7 @@ A capability phase is an engineering dependency boundary; a public release is a 
 
 Promise: StackCendra has an agreed product contract, secure architecture, reproducible toolchain, monorepo foundation, web and desktop shells, quality gates, and telemetry baseline.
 
-See [Phase 0 Foundation](Phase-0-Foundation.md).
+See [Phase 0 Foundation](https://github.com/keshav-019/stackcendra/wiki/Phase-0-Foundation).
 
 ## Public release sequence
 
@@ -44,7 +44,7 @@ See [Phase 0 Foundation](Phase-0-Foundation.md).
 
 Gate: the mixed-language fixture is detected correctly and displayed as an evidence-backed dependency graph.
 
-Full specification: [Phase 1 Intelligent Local Project Discovery](Phase-1-Intelligent-Project-Discovery.md).
+Full specification: [Phase 1 Intelligent Local Project Discovery](https://github.com/keshav-019/stackcendra/wiki/Phase-1-Intelligent-Project-Discovery).
 
 ### Phase 2 — Local environment manager
 
@@ -56,7 +56,7 @@ Full specification: [Phase 1 Intelligent Local Project Discovery](Phase-1-Intell
 
 Gate: a new developer can run a fixture without installing its databases or service runtimes directly.
 
-Full specification: [Phase 2 Local Environment Manager](Phase-2-Local-Environment-Manager.md).
+Full specification: [Phase 2 Local Environment Manager](https://github.com/keshav-019/stackcendra/wiki/Phase-2-Local-Environment-Manager).
 
 ### Phase 3 — Configuration intelligence
 
@@ -68,7 +68,7 @@ Full specification: [Phase 2 Local Environment Manager](Phase-2-Local-Environmen
 
 Gate: a pull request adding a required configuration value is detected before deployment.
 
-Full specification: [Phase 3 Configuration Intelligence](Phase-3-Configuration-Intelligence.md).
+Full specification: [Phase 3 Configuration Intelligence](https://github.com/keshav-019/stackcendra/wiki/Phase-3-Configuration-Intelligence).
 
 ### Phase 4 — Secure SSH client and keychain
 
@@ -80,7 +80,7 @@ Full specification: [Phase 3 Configuration Intelligence](Phase-3-Configuration-I
 
 Gate: a locally generated key can be installed on an authorized VM and used without exposing private key material to the cloud.
 
-Full specification: [Phase 4 Secure SSH and Keychain](Phase-4-Secure-SSH-and-Keychain.md).
+Full specification: [Phase 4 Secure SSH and Keychain](https://github.com/keshav-019/stackcendra/wiki/Phase-4-Secure-SSH-and-Keychain).
 
 ### Phase 5 — Actions
 
@@ -92,7 +92,7 @@ Full specification: [Phase 4 Secure SSH and Keychain](Phase-4-Secure-SSH-and-Key
 
 Gate: a repeatable remote operation executes through an explicitly authorized, auditable path.
 
-Full specification: [Phase 5 Actions and Remote Operations](Phase-5-Actions-and-Remote-Operations.md).
+Full specification: [Phase 5 Actions and Remote Operations](https://github.com/keshav-019/stackcendra/wiki/Phase-5-Actions-and-Remote-Operations).
 
 ### Phase 6 — Visual automation flows
 
@@ -103,7 +103,7 @@ Full specification: [Phase 5 Actions and Remote Operations](Phase-5-Actions-and-
 
 Gate: a failed deployment safely rolls back and preserves its execution timeline.
 
-Full specification: [Phase 6 Visual Automation Flows](Phase-6-Visual-Automation-Flows.md).
+Full specification: [Phase 6 Visual Automation Flows](https://github.com/keshav-019/stackcendra/wiki/Phase-6-Visual-Automation-Flows).
 
 ### Phase 7 — Git intelligence and delivery
 
@@ -115,7 +115,7 @@ Full specification: [Phase 6 Visual Automation Flows](Phase-6-Visual-Automation-
 
 Gate: a production deployment can be traced to its reviewed change, artifact, configuration version, and approvers.
 
-Full specification: [Phase 7 Git Intelligence and Delivery](Phase-7-Git-Intelligence-and-Delivery.md).
+Full specification: [Phase 7 Git Intelligence and Delivery](https://github.com/keshav-019/stackcendra/wiki/Phase-7-Git-Intelligence-and-Delivery).
 
 ### Phase 8 — Docker and Kubernetes operations
 
@@ -126,7 +126,7 @@ Full specification: [Phase 7 Git Intelligence and Delivery](Phase-7-Git-Intellig
 
 Gate: unhealthy resources can be connected to the deployment and configuration that created them.
 
-Full specification: [Phase 8 Docker and Kubernetes Operations](Phase-8-Docker-and-Kubernetes-Operations.md).
+Full specification: [Phase 8 Docker and Kubernetes Operations](https://github.com/keshav-019/stackcendra/wiki/Phase-8-Docker-and-Kubernetes-Operations).
 
 ### Phase 9 — Cloud support
 
@@ -137,7 +137,7 @@ Full specification: [Phase 8 Docker and Kubernetes Operations](Phase-8-Docker-an
 
 Gate: cloud resources can be inventoried and associated with StackCendra projects without broad persistent credentials.
 
-Full specification: [Phase 9 Multi-Cloud Support](Phase-9-Multi-Cloud-Support.md).
+Full specification: [Phase 9 Multi-Cloud Support](https://github.com/keshav-019/stackcendra/wiki/Phase-9-Multi-Cloud-Support).
 
 ### Phase 10 — Observability and incident intelligence
 
@@ -149,7 +149,7 @@ Full specification: [Phase 9 Multi-Cloud Support](Phase-9-Multi-Cloud-Support.md
 
 Gate: a hypothesis connects Git, configuration, deployments, and runtime evidence rather than summarizing log text alone.
 
-Full specification: [Phase 10 Observability and Incident Intelligence](Phase-10-Observability-and-Incident-Intelligence.md).
+Full specification: [Phase 10 Observability and Incident Intelligence](https://github.com/keshav-019/stackcendra/wiki/Phase-10-Observability-and-Incident-Intelligence).
 
 ### Phase 11 — Production-to-local reproduction
 
@@ -162,7 +162,7 @@ Full specification: [Phase 10 Observability and Incident Intelligence](Phase-10-
 
 Gate: a production failure is reproduced without raw customer data or production credentials.
 
-Full specification: [Phase 11 Production-to-Local Reproduction](Phase-11-Production-to-Local-Reproduction.md).
+Full specification: [Phase 11 Production-to-Local Reproduction](https://github.com/keshav-019/stackcendra/wiki/Phase-11-Production-to-Local-Reproduction).
 
 ### Phase 12 — Real-time collaboration
 
@@ -173,7 +173,7 @@ Full specification: [Phase 11 Production-to-Local Reproduction](Phase-11-Product
 
 Gate: two users can investigate, approve, and document remediation from a shared incident room.
 
-Full specification: [Phase 12 Real-Time Collaboration](Phase-12-Real-Time-Collaboration.md).
+Full specification: [Phase 12 Real-Time Collaboration](https://github.com/keshav-019/stackcendra/wiki/Phase-12-Real-Time-Collaboration).
 
 ### Phase 13 — Governance
 
@@ -185,7 +185,7 @@ Full specification: [Phase 12 Real-Time Collaboration](Phase-12-Real-Time-Collab
 
 Gate: sensitive operations can be proven to satisfy policy, approval, identity, and evidence requirements.
 
-Full specification: [Phase 13 Governance and Enterprise Readiness](Phase-13-Governance-and-Enterprise-Readiness.md).
+Full specification: [Phase 13 Governance and Enterprise Readiness](https://github.com/keshav-019/stackcendra/wiki/Phase-13-Governance-and-Enterprise-Readiness).
 
 ## Integration priority
 

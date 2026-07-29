@@ -14,7 +14,7 @@ The current application is a visual prototype. It demonstrates possible interfac
 
 ## Documentation
 
-The complete Phase 0–13 planning documentation is versioned in [`docs/wiki`](docs/wiki/Home.md), which remains the canonical review history. The repository's hosted Wiki is enabled and will mirror this source after GitHub's one-time first-page initialization.
+The complete Phase 0–13 planning documentation is versioned in [`docs/wiki`](docs/wiki/Home.md), which remains the canonical review history. The same reviewed page set is published to the [hosted StackCendra Wiki](https://github.com/keshav-019/stackcendra/wiki).
 
 Start with:
 

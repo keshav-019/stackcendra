@@ -50,17 +50,21 @@ Docker Desktop was installed per-user with the WSL 2 backend. The CLI and Compos
 
 StackCendra does not accept third-party agreements on the user's behalf.
 
-## GitHub Wiki publication gate
+## GitHub Wiki publication status
 
 GitHub CLI authentication is complete. On July 30, 2026, GitHub reported the repository as public with `hasWikiEnabled: true`.
 
-GitHub does not create the separate `stackcendra.wiki.git` repository until an initial page is saved through the GitHub web interface. The complete versioned source remains available under `docs/wiki`. After the one-time initialization, publication is:
+The one-time initial page has been created and the complete 41-file source has been published to `stackcendra.wiki.git`. The placeholder Home page was replaced while its initial commit was retained in history.
+
+The recurring publication process is:
 
 1. clone `git@github.com:keshav-019/stackcendra.wiki.git`;
 2. copy the reviewed Markdown source from `docs/wiki`;
 3. commit the exact source revision;
 4. push the Wiki repository's default branch;
 5. verify navigation and Mermaid rendering on GitHub.
+
+Internal navigation uses absolute, extensionless hosted Wiki URLs because GitHub redirects `.md` Wiki URLs to raw Markdown rather than rendered pages.
 
 ## Reverification
 
