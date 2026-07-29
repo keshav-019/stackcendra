@@ -1,73 +1,85 @@
-# Welcome to your Lovable project
+# StackCendra
 
-## Project info
+**From local development to verified production recovery—without switching tools.**
 
-**URL**: https://lovable.dev/projects/7f624ce3-117b-4c1b-b7b8-682ba21baf7e
+StackCendra is an AI-native engineering workspace designed to understand source code, configuration, local environments, remote infrastructure, deployments, and production telemetry. Its first goal is deliberately focused:
 
-## How can I edit this code?
+> Detect, reproduce, and resolve environment-related failures across local development and production.
 
-There are several ways of editing your application.
+## Project status
 
-**Use Lovable**
+StackCendra is in **Phase 0: Foundation and product architecture**.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7f624ce3-117b-4c1b-b7b8-682ba21baf7e) and start prompting.
+The current application is a visual prototype. It demonstrates possible interface concepts, but it is not yet connected to a backend, desktop agent, container runtime, cloud account, or AI investigation service. Phase 0 establishes the product contract and engineering foundation before those systems are implemented.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Documentation
 
-**Use your preferred IDE**
+The complete planning documentation is versioned in [`docs/wiki`](docs/wiki/Home.md). It is prepared for publication to the [StackCendra Wiki](https://github.com/keshav-019/stackcendra/wiki) once GitHub Wiki is enabled for the repository.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Start with:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- [Product vision and scope](docs/wiki/Product-Vision-and-Scope.md)
+- [Phase 0 plan](docs/wiki/Phase-0-Foundation.md)
+- [Phase 0 execution backlog](docs/wiki/Phase-0-Execution-Backlog.md)
+- [System architecture](docs/wiki/System-Architecture.md)
+- [Security and trust model](docs/wiki/Security-and-Trust-Model.md)
+- [Toolchain setup record](docs/wiki/Toolchain-Setup-Record.md)
+- [Release 0.1: project discovery](docs/wiki/Release-0.1-Project-Discovery.md)
+- [Development roadmap](docs/wiki/Roadmap.md)
+- [Architecture decisions](docs/wiki/Architecture-Decisions.md)
 
-Follow these steps:
+## Product workflow
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```text
+Discover project
+  → understand configuration
+  → generate and validate an environment
+  → develop and test
+  → review and deploy through controlled flows
+  → observe runtime behavior
+  → diagnose incidents with evidence
+  → reproduce failures locally
+  → verify recovery and prevent recurrence
 ```
 
-**Edit a file directly in GitHub**
+## Planned platform boundaries
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+| Technology | Responsibility |
+| --- | --- |
+| Next.js and TypeScript | Web experience and shared product interface |
+| Tauri 2 and Rust | Desktop shell, local discovery, terminals, credentials, SSH, and Docker access |
+| Go | Infrastructure control plane and provider integrations |
+| Python | Evidence-driven repository and incident intelligence |
+| NestJS | Presence, collaboration, WebSockets, and notifications |
+| PostgreSQL | Core product state and resource relationships |
+| Temporal | Durable, approval-based automation |
+| OpenTelemetry | Correlation across code, deployments, configuration, and runtime behavior |
 
-**Use GitHub Codespaces**
+These are target responsibility boundaries, not permission to deploy every component as a separate service immediately. StackCendra begins as a modular system with the smallest useful number of runtime units.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Engineering principles
 
-## What technologies are used for this project?
+1. Build one complete workflow, not twenty shallow products.
+2. Every diagnosis must link claims to evidence.
+3. AI proposes; policy validates; humans approve; constrained runners execute.
+4. Secrets do not enter ordinary prompts, logs, Git, or browser storage.
+5. Every release must be independently demonstrable and useful.
+6. Local and customer-hosted execution handle sensitive or expensive work.
+7. Architecture evolves only when measured requirements justify additional complexity.
 
-This project is built with:
+## Near-term releases
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Release | Promise |
+| --- | --- |
+| 0.1 | Detect and explain local projects |
+| 0.2 | Understand configuration requirements |
+| 0.3 | Compare environments and prevent drift |
+| 0.4 | Securely connect to remote hosts |
+| 0.5 | Automate repeatable remote actions |
+| 0.6 | Build health-gated deployment flows |
+| 0.7 | Correlate Git, deployment, and configuration |
+| 0.8 | Inspect Docker and Kubernetes |
+| 0.9 | Diagnose incidents using evidence |
+| 1.0 | Reproduce production failures locally |
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/7f624ce3-117b-4c1b-b7b8-682ba21baf7e) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Implementation instructions will be added after Phase 0 establishes the monorepo and reproducible local development environment.
