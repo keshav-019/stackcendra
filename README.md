@@ -14,18 +14,20 @@ The current application is a visual prototype. It demonstrates possible interfac
 
 ## Documentation
 
-The complete planning documentation is versioned in [`docs/wiki`](docs/wiki/Home.md). It is prepared for publication to the [StackCendra Wiki](https://github.com/keshav-019/stackcendra/wiki) once GitHub Wiki is enabled for the repository.
+The complete Phase 0–13 planning documentation is versioned in [`docs/wiki`](docs/wiki/Home.md). GitHub Wiki is unavailable for the repository's current private-plan configuration, so the repository-hosted pages are the canonical, reviewable Wiki source.
 
 Start with:
 
 - [Product vision and scope](docs/wiki/Product-Vision-and-Scope.md)
 - [Phase 0 plan](docs/wiki/Phase-0-Foundation.md)
 - [Phase 0 execution backlog](docs/wiki/Phase-0-Execution-Backlog.md)
+- [Phase delivery framework](docs/wiki/Phase-Delivery-Framework.md)
+- [Complete capability roadmap](docs/wiki/Roadmap.md)
+- [Wiki review guide](docs/wiki/Wiki-Review-Guide.md)
 - [System architecture](docs/wiki/System-Architecture.md)
 - [Security and trust model](docs/wiki/Security-and-Trust-Model.md)
 - [Toolchain setup record](docs/wiki/Toolchain-Setup-Record.md)
 - [Release 0.1: project discovery](docs/wiki/Release-0.1-Project-Discovery.md)
-- [Development roadmap](docs/wiki/Roadmap.md)
 - [Architecture decisions](docs/wiki/Architecture-Decisions.md)
 
 ## Product workflow

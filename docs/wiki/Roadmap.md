@@ -4,13 +4,15 @@
 
 Each release must complete a user outcome and produce a demonstrable artifact. Dates are forecasts, not promises; gates are based on evidence.
 
+A capability phase is an engineering dependency boundary; a public release is a useful product package. They are not required to map one-to-one. See [Phase Delivery Framework](Phase-Delivery-Framework.md).
+
 ## Foundation
 
 ### Phase 0 — Foundation and product architecture
 
 Promise: StackCendra has an agreed product contract, secure architecture, reproducible toolchain, monorepo foundation, web and desktop shells, quality gates, and telemetry baseline.
 
-See [Phase 0 Foundation](Phase-0-Foundation).
+See [Phase 0 Foundation](Phase-0-Foundation.md).
 
 ## Public release sequence
 
@@ -27,7 +29,8 @@ See [Phase 0 Foundation](Phase-0-Foundation).
 | 0.9 | Diagnose incidents with evidence | Telemetry correlation and hypotheses |
 | 1.0 | Reproduce production failures locally | Sanitized isolated reproduction |
 | 1.1 | Resolve incidents collaboratively | Presence, shared notes, approvals |
-| 1.2 | Expand infrastructure coverage | Additional cloud providers and governance |
+| 1.2 | Expand infrastructure coverage | Additional cloud providers |
+| Later 1.x | Govern enterprise operations | SSO, policy, audit export, retention, and enterprise controls |
 
 ## Capability phases
 
@@ -41,6 +44,8 @@ See [Phase 0 Foundation](Phase-0-Foundation).
 
 Gate: the mixed-language fixture is detected correctly and displayed as an evidence-backed dependency graph.
 
+Full specification: [Phase 1 Intelligent Local Project Discovery](Phase-1-Intelligent-Project-Discovery.md).
+
 ### Phase 2 — Local environment manager
 
 - Dockerfile and Compose proposals;
@@ -50,6 +55,8 @@ Gate: the mixed-language fixture is detected correctly and displayed as an evide
 - port conflict ownership and resolution.
 
 Gate: a new developer can run a fixture without installing its databases or service runtimes directly.
+
+Full specification: [Phase 2 Local Environment Manager](Phase-2-Local-Environment-Manager.md).
 
 ### Phase 3 — Configuration intelligence
 
@@ -61,6 +68,8 @@ Gate: a new developer can run a fixture without installing its databases or serv
 
 Gate: a pull request adding a required configuration value is detected before deployment.
 
+Full specification: [Phase 3 Configuration Intelligence](Phase-3-Configuration-Intelligence.md).
+
 ### Phase 4 — Secure SSH client and keychain
 
 - host management;
@@ -70,6 +79,8 @@ Gate: a pull request adding a required configuration value is detected before de
 - local-only and automation-vault trust modes.
 
 Gate: a locally generated key can be installed on an authorized VM and used without exposing private key material to the cloud.
+
+Full specification: [Phase 4 Secure SSH and Keychain](Phase-4-Secure-SSH-and-Keychain.md).
 
 ### Phase 5 — Actions
 
@@ -81,6 +92,8 @@ Gate: a locally generated key can be installed on an authorized VM and used with
 
 Gate: a repeatable remote operation executes through an explicitly authorized, auditable path.
 
+Full specification: [Phase 5 Actions and Remote Operations](Phase-5-Actions-and-Remote-Operations.md).
+
 ### Phase 6 — Visual automation flows
 
 - directed action graphs;
@@ -89,6 +102,8 @@ Gate: a repeatable remote operation executes through an explicitly authorized, a
 - canary, rolling, and blue/green strategies.
 
 Gate: a failed deployment safely rolls back and preserves its execution timeline.
+
+Full specification: [Phase 6 Visual Automation Flows](Phase-6-Visual-Automation-Flows.md).
 
 ### Phase 7 — Git intelligence and delivery
 
@@ -100,6 +115,8 @@ Gate: a failed deployment safely rolls back and preserves its execution timeline
 
 Gate: a production deployment can be traced to its reviewed change, artifact, configuration version, and approvers.
 
+Full specification: [Phase 7 Git Intelligence and Delivery](Phase-7-Git-Intelligence-and-Delivery.md).
+
 ### Phase 8 — Docker and Kubernetes operations
 
 - topology, health, logs, exec, events, and resource usage;
@@ -108,6 +125,8 @@ Gate: a production deployment can be traced to its reviewed change, artifact, co
 - constrained operational actions.
 
 Gate: unhealthy resources can be connected to the deployment and configuration that created them.
+
+Full specification: [Phase 8 Docker and Kubernetes Operations](Phase-8-Docker-and-Kubernetes-Operations.md).
 
 ### Phase 9 — Cloud support
 
@@ -118,6 +137,8 @@ Gate: unhealthy resources can be connected to the deployment and configuration t
 
 Gate: cloud resources can be inventoried and associated with StackCendra projects without broad persistent credentials.
 
+Full specification: [Phase 9 Multi-Cloud Support](Phase-9-Multi-Cloud-Support.md).
+
 ### Phase 10 — Observability and incident intelligence
 
 - OpenTelemetry correlation;
@@ -127,6 +148,8 @@ Gate: cloud resources can be inventoried and associated with StackCendra project
 - human-approved remediation.
 
 Gate: a hypothesis connects Git, configuration, deployments, and runtime evidence rather than summarizing log text alone.
+
+Full specification: [Phase 10 Observability and Incident Intelligence](Phase-10-Observability-and-Incident-Intelligence.md).
 
 ### Phase 11 — Production-to-local reproduction
 
@@ -139,6 +162,8 @@ Gate: a hypothesis connects Git, configuration, deployments, and runtime evidenc
 
 Gate: a production failure is reproduced without raw customer data or production credentials.
 
+Full specification: [Phase 11 Production-to-Local Reproduction](Phase-11-Production-to-Local-Reproduction.md).
+
 ### Phase 12 — Real-time collaboration
 
 - incident presence and notifications;
@@ -147,6 +172,8 @@ Gate: a production failure is reproduced without raw customer data or production
 - optional LiveKit integration.
 
 Gate: two users can investigate, approve, and document remediation from a shared incident room.
+
+Full specification: [Phase 12 Real-Time Collaboration](Phase-12-Real-Time-Collaboration.md).
 
 ### Phase 13 — Governance
 
@@ -157,6 +184,8 @@ Gate: two users can investigate, approve, and document remediation from a shared
 - organization-hosted runners and retention controls.
 
 Gate: sensitive operations can be proven to satisfy policy, approval, identity, and evidence requirements.
+
+Full specification: [Phase 13 Governance and Enterprise Readiness](Phase-13-Governance-and-Enterprise-Readiness.md).
 
 ## Integration priority
 
