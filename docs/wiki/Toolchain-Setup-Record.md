@@ -52,15 +52,15 @@ StackCendra does not accept third-party agreements on the user's behalf.
 
 ## GitHub Wiki publication gate
 
-GitHub CLI authentication is complete, but the repository is private and GitHub reports `hasWikiEnabled: false`. An authenticated request to enable the Wiki remained false.
+GitHub CLI authentication is complete. On July 30, 2026, GitHub reported the repository as public with `hasWikiEnabled: true`.
 
-The versioned Wiki source is complete under `docs/wiki`. Hosted GitHub Wiki publication requires one of:
+GitHub does not create the separate `stackcendra.wiki.git` repository until an initial page is saved through the GitHub web interface. The complete versioned source remains available under `docs/wiki`. After the one-time initialization, publication is:
 
-- make the repository public;
-- use a GitHub plan that supports Wikis for private repositories and enable the feature;
-- explicitly choose a different hosted documentation surface.
-
-Repository visibility is not changed automatically because making source public is a separate, material decision.
+1. clone `git@github.com:keshav-019/stackcendra.wiki.git`;
+2. copy the reviewed Markdown source from `docs/wiki`;
+3. commit the exact source revision;
+4. push the Wiki repository's default branch;
+5. verify navigation and Mermaid rendering on GitHub.
 
 ## Reverification
 

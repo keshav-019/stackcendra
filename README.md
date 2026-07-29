@@ -14,7 +14,7 @@ The current application is a visual prototype. It demonstrates possible interfac
 
 ## Documentation
 
-The complete Phase 0–13 planning documentation is versioned in [`docs/wiki`](docs/wiki/Home.md). GitHub Wiki is unavailable for the repository's current private-plan configuration, so the repository-hosted pages are the canonical, reviewable Wiki source.
+The complete Phase 0–13 planning documentation is versioned in [`docs/wiki`](docs/wiki/Home.md), which remains the canonical review history. The repository's hosted Wiki is enabled and will mirror this source after GitHub's one-time first-page initialization.
 
 Start with:
 
