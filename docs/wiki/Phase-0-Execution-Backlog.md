@@ -103,15 +103,22 @@ Accept when:
 
 ### P0-005 — Next.js web shell
 
-**Status:** Planned
+**Status:** Lightweight shell in place; full scope still planned
 
-Deliver:
+Delivered so far:
 
-- Next.js 16.2 Active LTS application using App Router;
-- root layout, error boundaries, metadata, and product routes;
-- query and client-state boundaries;
-- authenticated-shell placeholder without selecting a provider prematurely;
-- preserved useful prototype views.
+- Next.js App Router application (Next.js 15.x, React 19) running in place of the Vite prototype;
+- root layout, providers boundary, and global styles carried over from the prototype design system;
+- `/`, `/login`, and `/signup` routes; the dashboard is intentionally unguarded — no auth gate exists yet;
+- no Vite, React Router, or Lovable scaffolding remains in the web shell;
+- production build (`next build`) passes with linting and type checking enabled.
+
+Still outstanding for full P0-005 completion:
+
+- upgrade to the pinned Next.js 16.2 Active LTS release once it is broadly stable and the pnpm workspace (P0-004) exists to pin it in;
+- routes matching the complete release 0.1 information architecture (Home / Develop / Configure / Connect / Automate / Operate / Resolve / Govern), not only the dashboard, login, and signup concept screens;
+- a real authenticated-shell boundary once an identity provider is selected (P0-009);
+- query and client-state boundaries formalized beyond the current `TooltipProvider`/`QueryClientProvider` wrapper.
 
 Accept when:
 
@@ -175,14 +182,20 @@ Accept when:
 
 ### P0-009 — Identity and domain skeleton
 
-**Status:** Planned
+**Status:** Started — user and OAuth account persistence only
 
-Deliver:
+Delivered so far:
 
-- organization, user, membership, device, project, repository, service, and environment models;
+- real `users` and `accounts` tables in the provisioned Neon Postgres database (`db/auth-schema.sql`), populated via the official Auth.js Postgres adapter on every GitHub sign-in — see [ADR 0010](https://github.com/keshav-019/stackcendra/wiki/ADR-0010-Postgres-User-Persistence);
+- every route except `/login`/`/signup` now requires a real session (see [ADR 0009](https://github.com/keshav-019/stackcendra/wiki/ADR-0009-Route-Gating)), which is the first authorization gate, though it is not yet the full authorization model below.
+
+Still outstanding for full P0-009 completion:
+
+- organization, membership, project, repository, service, and environment models;
 - development-only device-pairing flow;
 - authorization interfaces without premature enterprise features;
-- audit-event persistence path.
+- audit-event persistence path;
+- a chosen migration tool (the current schema is applied by hand — see the open decision in [Risks, Non-Goals, and Decision Log](https://github.com/keshav-019/stackcendra/wiki/Risks-Non-Goals-and-Decision-Log)).
 
 Accept when:
 

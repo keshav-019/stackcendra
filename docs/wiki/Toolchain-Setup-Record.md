@@ -50,6 +50,12 @@ Docker Desktop was installed per-user with the WSL 2 backend. The CLI and Compos
 
 StackCendra does not accept third-party agreements on the user's behalf.
 
+## Web shell dependency record
+
+The lightweight Next.js shell (see [Phase 0 Execution Backlog](https://github.com/keshav-019/stackcendra/wiki/Phase-0-Execution-Backlog) P0-005) currently installs with npm, using the existing `package-lock.json`, rather than the pnpm workspace targeted by [ADR 0002](https://github.com/keshav-019/stackcendra/wiki/ADR-0002-Pnpm-Monorepo). The pnpm workspace migration remains scheduled for P0-004; npm is a deliberate, temporary choice to avoid workspace tooling before there is a workspace to manage.
+
+Upgrading to Next.js 15 and React 19 required bumping several UI dependencies whose published `peerDependencies` still capped at React 18, even though they run correctly under React 19: `cmdk` (1.0.0 → 1.1.1), `next-themes` (0.3.0 → 0.4.6), `embla-carousel-react` (8.3.0 → 8.6.0), `vaul` (0.9.3 → 1.1.2), `input-otp` (1.2.4 → 1.4.2), `sonner` (1.5.0 → 2.0.7), and `react-day-picker` (8.10.1 → 9.x, which required updating `src/components/ui/calendar.tsx` to the v9 `classNames`/`Chevron` API). `react-router-dom` and the unused `react-beautiful-dnd` dependency were removed; routing now uses the Next.js App Router.
+
 ## GitHub Wiki publication status
 
 GitHub CLI authentication is complete. On July 30, 2026, GitHub reported the repository as public with `hasWikiEnabled: true`.
