@@ -17,20 +17,20 @@ export const AIAssistant = ({ onClose }: AIAssistantProps) => {
       id: 1,
       type: 'ai',
       content: "🤖 **AI Analysis Complete**\n\nI've detected a critical issue in your payment microservice:\n\n**Root Cause:** Database connection pool exhaustion in `payment-service/src/db/connection.js`\n\n**Impact:** 47% of payment requests failing\n\n**Recommended Fix:**\n1. Increase pool size from 10 to 25\n2. Add connection timeout handling\n3. Implement circuit breaker pattern\n\nShall I apply these fixes automatically?",
-      timestamp: new Date(Date.now() - 30000),
+      timestamp: new Date('2026-07-30T14:23:00Z'),
       actions: ['Apply Fix', 'Show Code', 'Schedule Deploy']
     },
     {
       id: 2,
       type: 'user',
       content: "Show me the specific code changes needed",
-      timestamp: new Date(Date.now() - 20000)
+      timestamp: new Date('2026-07-30T14:23:10Z')
     },
     {
       id: 3,
       type: 'ai',
       content: "```javascript\n// payment-service/src/db/connection.js\nconst pool = new Pool({\n  user: process.env.DB_USER,\n  host: process.env.DB_HOST,\n  database: process.env.DB_NAME,\n  password: process.env.DB_PASSWORD,\n  port: process.env.DB_PORT,\n- max: 10, // Current pool size\n+ max: 25, // Increased pool size\n+ connectionTimeoutMillis: 2000,\n+ idleTimeoutMillis: 30000,\n+ allowExitOnIdle: true\n});\n\n+ // Add circuit breaker\n+ const CircuitBreaker = require('opossum');\n+ const options = {\n+   timeout: 3000,\n+   errorThresholdPercentage: 50,\n+   resetTimeout: 30000\n+ };\n+ const breaker = new CircuitBreaker(pool.query, options);\n```\n\n**Git Impact Analysis:**\n- Files changed: 3\n- Tests affected: 12\n- Deployment risk: LOW\n\nThis change is backward compatible and follows your team's coding standards.",
-      timestamp: new Date(Date.now() - 10000),
+      timestamp: new Date('2026-07-30T14:23:20Z'),
       codeBlock: true
     }
   ]);
@@ -130,7 +130,7 @@ export const AIAssistant = ({ onClose }: AIAssistantProps) => {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 min-h-0 p-4">
         <div className="space-y-4">
           {messages.map((message) => (
             <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -152,7 +152,7 @@ export const AIAssistant = ({ onClose }: AIAssistantProps) => {
                   )}
                 </div>
                 <p className="text-xs text-gray-400 mt-1 px-2">
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {message.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
                 </p>
               </div>
               {message.type === 'ai' && (
@@ -178,8 +178,8 @@ export const AIAssistant = ({ onClose }: AIAssistantProps) => {
         </div>
       </ScrollArea>
 
-      {/* Input - Fixed positioning */}
-      <div className="p-4 border-t border-white/10 flex-shrink-0" style={{ paddingBottom: '5rem' }}>
+      {/* Input */}
+      <div className="p-4 border-t border-white/10 flex-shrink-0">
         <div className="flex space-x-2">
           <Input
             value={inputValue}
