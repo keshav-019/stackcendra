@@ -1,5 +1,34 @@
 # Testing, Quality, and Observability
 
+## Current implementation (web shell)
+
+Most of this page describes the target testing strategy for the full multi-language platform once P0-011 (CI, supply chain, and security baseline) begins. This section instead records what is actually running today, against the Next.js web shell only.
+
+### Unit and component tests — Vitest
+
+- Config: `vitest.config.ts` (jsdom environment, `@` path alias matching `tsconfig.json`, v8 coverage) and `vitest.setup.ts` (jest-dom matchers, a `ResizeObserver` stub for Radix UI, and default mocks for `next/navigation` and `next-auth/react`).
+- Convention: colocated `*.test.ts`/`*.test.tsx` files next to the source they test, not a mirrored test tree.
+- Run with `npm run test` (single run), `npm run test:watch`, or `npm run test:coverage`.
+- Current coverage: `cn()` class-merging behavior, mock-data integrity for projects and integrations (unique ids, cross-references between AI fixes and CI runs, confidence bounds), `settings-sections.ts` structure, the `Logo`/`LogoMark` component, the Signup edition-selector toggle, and the Team Call live/empty-state toggle.
+
+### End-to-end tests — Playwright
+
+- Config: `playwright.config.ts` — targets `http://localhost:8080`, auto-starts `npm run dev` as the `webServer` if one isn't already running, Chromium only for now.
+- Run with `npm run test:e2e` (headless) or `npm run test:e2e:ui` (interactive).
+- **Authenticated E2E tests cannot use real GitHub/Google sign-in** — that would mean automating a third-party consent screen with a live test account, which is out of scope. Instead, `e2e/auth-helper.ts` mints a valid Auth.js session JWT (`next-auth/jwt`'s `encode`, signed with the same `AUTH_SECRET` the dev server uses) and injects it as a cookie before the test navigates. This exercises session gating and authenticated-UI rendering correctly, but the synthetic user it represents is never written to Postgres and it does not cover the real OAuth handshake itself — that is verified manually (see [ADR 0008](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth) and [ADR 0010](https://github.com/keshav-019/stackcendra/wiki/ADR-0010-Postgres-User-Persistence)) by confirming the redirect reaches the real provider consent screen with the correct client ID.
+- Coverage: unauthenticated route gating (every protected route redirects to `/login` with the right `callbackUrl`, per [ADR 0009](https://github.com/keshav-019/stackcendra/wiki/ADR-0009-Route-Gating)), both OAuth buttons on `/login` and `/signup` reaching the real provider domain, authenticated dashboard rendering and tab switching, the "Dashboard" back-link from every non-dashboard screen, and the shared account/settings shell being reachable and section-switchable from both `/profile` and `/settings`.
+- A dedicated test (`authenticated-dashboard.spec.ts`) asserts zero browser console errors on initial load specifically as a hydration-regression guard — see the note below.
+
+### A real bug this suite caught immediately
+
+Writing the E2E tab-switching test caught a genuine hydration bug that had survived the earlier hydration fix: `AIAssistant`'s seeded message timestamps used `toLocaleTimeString([], {...})`, and even after pinning `timeZone: 'UTC'`, the *locale* was still left to the runtime default — Node (server) and Chromium (client) resolved that default differently, rendering `02:23 PM` server-side and `02:23 pm` client-side. React's hydration-mismatch recovery discarded and regenerated a large enough part of the tree that click handling on the (unrelated, sibling) dashboard tabs broke transiently. The fix pins both the timezone and the locale explicitly (`toLocaleTimeString('en-US', { timeZone: 'UTC', ... })`). The wiki maintenance habit applies here too: the earlier hydration-safety rule in [Concept UI Screens](https://github.com/keshav-019/stackcendra/wiki/Concept-UI-Screens) only mentioned timezone, not locale — it now covers both.
+
+### Known gaps
+
+- No CI workflow runs these yet (still local-only); wiring GitHub Actions to run `npm run test` and `npm run test:e2e` on every PR is part of P0-011, not done.
+- Playwright only runs Chromium; Firefox/WebKit projects are easy to add later but weren't necessary to catch real bugs yet.
+- No visual regression testing.
+
 ## Quality objective
 
 StackCendra must earn trust before it receives privileged access. Tests focus on evidence correctness, boundary enforcement, reproducibility, and safe failure—not only interface snapshots.
