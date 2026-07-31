@@ -1,263 +1,158 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Clock, AlertCircle, User, Calendar, GitBranch } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Plus, ChevronDown, ChevronRight, GitBranch, Star } from 'lucide-react';
+
+type Group = 'Today' | 'This week' | 'Later' | 'Completed';
+
+interface Task {
+  id: number;
+  title: string;
+  notes: string;
+  group: Group;
+  done: boolean;
+  starred: boolean;
+  tags: string[];
+}
+
+const initialTasks: Task[] = [
+  {
+    id: 1,
+    title: 'Implement database connection pooling',
+    notes:
+      'Increase connection pool size to handle peak loads. Review current config, analyze peak load patterns, update pool size, test in staging, monitor after deploy. Blocked on staging environment access.',
+    group: 'Today',
+    done: false,
+    starred: true,
+    tags: ['backend', 'performance'],
+  },
+  {
+    id: 2,
+    title: 'Write integration tests for payment service',
+    notes: 'Cover timeout handling and error scenarios for payment processing, including network-failure edge cases.',
+    group: 'This week',
+    done: false,
+    starred: false,
+    tags: ['testing', 'payment'],
+  },
+  {
+    id: 3,
+    title: 'Optimize Docker image build process',
+    notes: 'Reduce build time and image size using multi-stage builds and a .dockerignore.',
+    group: 'Later',
+    done: false,
+    starred: false,
+    tags: ['docker', 'devops'],
+  },
+  {
+    id: 4,
+    title: 'Fix flaky retry test in payment client',
+    notes: 'Test intermittently fails under load; likely a race in the retry wrapper.',
+    group: 'Completed',
+    done: true,
+    starred: false,
+    tags: ['testing'],
+  },
+];
+
+const groupOrder: Group[] = ['Today', 'This week', 'Later', 'Completed'];
 
 export const MyTasks = () => {
-  const [selectedTask, setSelectedTask] = useState<number | null>(null);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [newTask, setNewTask] = useState('');
+  const [completedOpen, setCompletedOpen] = useState(false);
 
-  const myTasks = [
-    {
-      id: 1,
-      title: 'Implement database connection pooling',
-      description: 'Increase connection pool size to handle peak loads during high traffic periods',
-      status: 'inprogress',
-      priority: 'high',
-      assignedBy: 'Sarah Chen',
-      dueDate: '2024-03-15',
-      progress: 65,
-      timeSpent: '4h 30m',
-      estimatedTime: '8h',
-      approach: [
-        'Review current connection pool configuration',
-        'Analyze peak load patterns from monitoring data',
-        'Update pool size parameters in configuration',
-        'Test with staging environment',
-        'Monitor performance metrics after deployment'
-      ],
-      blockers: ['Waiting for staging environment access'],
-      tags: ['backend', 'performance', 'database']
-    },
-    {
-      id: 2,
-      title: 'Write integration tests for payment service',
-      description: 'Cover timeout handling and error scenarios for payment processing',
-      status: 'todo',
-      priority: 'medium',
-      assignedBy: 'Mike Rodriguez',
-      dueDate: '2024-03-18',
-      progress: 0,
-      timeSpent: '0h',
-      estimatedTime: '6h',
-      approach: [
-        'Set up test environment with mock payment gateway',
-        'Write tests for successful payment flows',
-        'Add timeout scenario tests',
-        'Implement error handling test cases',
-        'Add edge case coverage for network failures'
-      ],
-      blockers: [],
-      tags: ['testing', 'payment', 'integration']
-    },
-    {
-      id: 3,
-      title: 'Optimize Docker image build process',
-      description: 'Reduce build time and image size for faster deployments',
-      status: 'todo',
-      priority: 'low',
-      assignedBy: 'Alex Kumar',
-      dueDate: '2024-03-20',
-      progress: 0,
-      timeSpent: '0h',
-      estimatedTime: '4h',
-      approach: [
-        'Analyze current Dockerfile for optimization opportunities',
-        'Implement multi-stage builds',
-        'Add .dockerignore for unnecessary files',
-        'Use smaller base images where possible',
-        'Set up build caching strategies'
-      ],
-      blockers: [],
-      tags: ['docker', 'devops', 'optimization']
-    }
-  ];
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'done':
-        return <CheckCircle className="text-green-400" size={16} />;
-      case 'inprogress':
-        return <Clock className="text-blue-400" size={16} />;
-      default:
-        return <AlertCircle className="text-gray-400" size={16} />;
-    }
+  const toggleDone = (id: number) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, done: !t.done, group: !t.done ? 'Completed' : 'Today' } : t))
+    );
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'done':
-        return 'bg-green-500/20 text-green-300';
-      case 'inprogress':
-        return 'bg-blue-500/20 text-blue-300';
-      default:
-        return 'bg-gray-500/20 text-gray-300';
-    }
+  const toggleStar = (id: number) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, starred: !t.starred } : t)));
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-500/20 text-red-300';
-      case 'medium':
-        return 'bg-yellow-500/20 text-yellow-300';
-      default:
-        return 'bg-green-500/20 text-green-300';
-    }
+  const addTask = () => {
+    if (!newTask.trim()) return;
+    setTasks((prev) => [
+      { id: Date.now(), title: newTask.trim(), notes: '', group: 'Today', done: false, starred: false, tags: [] },
+      ...prev,
+    ]);
+    setNewTask('');
   };
+
+  const activeCount = tasks.filter((t) => !t.done).length;
 
   return (
     <div className="space-y-6">
-      {/* My Tasks Overview */}
       <Card className="bg-black/20 border-white/10 p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <User className="text-blue-400" size={20} />
-            My Tasks Overview
-          </h3>
-          <Badge className="bg-blue-500/20 text-blue-300">
-            {myTasks.filter(t => t.status === 'inprogress').length} Active
-          </Badge>
+          <h3 className="text-lg font-semibold text-white">My Tasks</h3>
+          <Badge className="bg-blue-500/20 text-blue-300">{activeCount} active</Badge>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <p className="text-sm font-medium text-green-300 mb-1">Completed</p>
-            <span className="text-2xl font-bold text-green-400">
-              {myTasks.filter(t => t.status === 'done').length}
-            </span>
-          </div>
-
-          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-            <p className="text-sm font-medium text-blue-300 mb-1">In Progress</p>
-            <span className="text-2xl font-bold text-blue-400">
-              {myTasks.filter(t => t.status === 'inprogress').length}
-            </span>
-          </div>
-
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-sm font-medium text-red-300 mb-1">To Do</p>
-            <span className="text-2xl font-bold text-red-400">
-              {myTasks.filter(t => t.status === 'todo').length}
-            </span>
-          </div>
+        <div className="flex items-center gap-2 mb-5">
+          <Plus size={16} className="text-gray-500 flex-shrink-0" />
+          <Input
+            value={newTask}
+            onChange={(e) => setNewTask(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addTask()}
+            placeholder="Add a task"
+            className="bg-transparent border-0 border-b border-white/10 rounded-none px-0 text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:border-ai-primary"
+          />
         </div>
-      </Card>
 
-      {/* Task List */}
-      <div className="space-y-4">
-        {myTasks.map((task) => (
-          <Card key={task.id} className="bg-black/20 border-white/10 p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-start gap-3">
-                {getStatusIcon(task.status)}
-                <div>
-                  <h4 className="text-md font-semibold text-white">{task.title}</h4>
-                  <p className="text-sm text-gray-400 mt-1">{task.description}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge className={getPriorityColor(task.priority)}>
-                  {task.priority}
-                </Badge>
-                <Badge className={getStatusColor(task.status)}>
-                  {task.status}
-                </Badge>
-              </div>
-            </div>
+        <div className="space-y-5">
+          {groupOrder.map((group) => {
+            const items = tasks.filter((t) => t.group === group);
+            if (items.length === 0) return null;
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <User size={14} />
-                <span>Assigned by: {task.assignedBy}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Calendar size={14} />
-                <span>Due: {task.dueDate}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Clock size={14} />
-                <span>{task.timeSpent} / {task.estimatedTime}</span>
-              </div>
-            </div>
-
-            {task.status === 'inprogress' && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-white">Progress</span>
-                  <span className="text-sm text-gray-400">{task.progress}%</span>
-                </div>
-                <Progress value={task.progress} className="h-2" />
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <div className="flex flex-wrap gap-2">
-                {task.tags.map((tag, index) => (
-                  <Badge key={index} className="bg-white/10 text-white text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSelectedTask(selectedTask === task.id ? null : task.id)}
-                className="text-white border-white/20"
-              >
-                {selectedTask === task.id ? 'Hide Details' : 'View Details'}
-              </Button>
-            </div>
-
-            {selectedTask === task.id && (
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <div className="space-y-4">
-                  <div>
-                    <h5 className="text-sm font-semibold text-white mb-2">Approach Strategy</h5>
-                    <ul className="space-y-2">
-                      {task.approach.map((step, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
-                          <span className="text-blue-400 font-bold">{index + 1}.</span>
-                          <span>{step}</span>
-                        </li>
+            if (group === 'Completed') {
+              return (
+                <div key={group}>
+                  <button
+                    type="button"
+                    onClick={() => setCompletedOpen((v) => !v)}
+                    className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2"
+                  >
+                    {completedOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    Completed ({items.length})
+                  </button>
+                  {completedOpen && (
+                    <div className="space-y-1">
+                      {items.map((task) => (
+                        <TaskRow key={task.id} task={task} onToggleDone={toggleDone} onToggleStar={toggleStar} />
                       ))}
-                    </ul>
-                  </div>
-
-                  {task.blockers.length > 0 && (
-                    <div>
-                      <h5 className="text-sm font-semibold text-red-300 mb-2">Current Blockers</h5>
-                      <ul className="space-y-1">
-                        {task.blockers.map((blocker, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-red-400">
-                            <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-                            <span>{blocker}</span>
-                          </li>
-                        ))}
-                      </ul>
                     </div>
                   )}
+                </div>
+              );
+            }
 
-                  <div className="flex gap-2">
-                    <Button size="sm" className="bg-blue-500/20 text-blue-300">
-                      Start Working
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-white border-white/20">
-                      Update Progress
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-white border-white/20">
-                      <GitBranch size={14} className="mr-1" />
-                      Create Branch
-                    </Button>
-                  </div>
+            return (
+              <div key={group}>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{group}</p>
+                <div className="space-y-1">
+                  {items.map((task) => (
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      onToggleDone={toggleDone}
+                      onToggleStar={toggleStar}
+                      expanded={expanded === task.id}
+                      onToggleExpand={() => setExpanded(expanded === task.id ? null : task.id)}
+                    />
+                  ))}
                 </div>
               </div>
-            )}
-          </Card>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      </Card>
 
       {/* AI Task Assistant */}
       <Card className="bg-gradient-ai/10 border-ai-primary/20 p-4">
@@ -269,7 +164,7 @@ export const MyTasks = () => {
               Consider tackling high-priority tasks first. The database pooling task is blocking other team members.
             </p>
           </div>
-          
+
           <div className="p-3 bg-white/5 rounded-lg">
             <p className="text-sm font-medium text-ai-primary mb-1">Time Management</p>
             <p className="text-xs text-gray-300">
@@ -277,11 +172,70 @@ export const MyTasks = () => {
             </p>
           </div>
 
-          <Button className="w-full bg-gradient-ai text-sm">
-            Get AI Task Recommendations
-          </Button>
+          <Button className="w-full bg-gradient-ai text-sm">Get AI Task Recommendations</Button>
         </div>
       </Card>
+    </div>
+  );
+};
+
+interface TaskRowProps {
+  task: Task;
+  onToggleDone: (id: number) => void;
+  onToggleStar: (id: number) => void;
+  expanded?: boolean;
+  onToggleExpand?: () => void;
+}
+
+const TaskRow: React.FC<TaskRowProps> = ({ task, onToggleDone, onToggleStar, expanded, onToggleExpand }) => {
+  return (
+    <div className="rounded-lg hover:bg-white/5 transition-colors">
+      <div className="flex items-center gap-3 px-2 py-2">
+        <button
+          type="button"
+          onClick={() => onToggleDone(task.id)}
+          className={cn(
+            'w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors',
+            task.done ? 'bg-ai-primary border-ai-primary' : 'border-white/30 hover:border-ai-primary'
+          )}
+        >
+          {task.done && <div className="w-2 h-2 rounded-full bg-white" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          className={cn('flex-1 min-w-0 text-left text-sm', task.done ? 'text-gray-500 line-through' : 'text-white')}
+        >
+          {task.title}
+        </button>
+
+        {task.tags.length > 0 && (
+          <div className="hidden sm:flex gap-1 flex-shrink-0">
+            {task.tags.map((tag) => (
+              <Badge key={tag} className="bg-white/10 text-gray-300 text-[10px]">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <button type="button" onClick={() => onToggleStar(task.id)} className="flex-shrink-0">
+          <Star size={14} className={task.starred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-600'} />
+        </button>
+      </div>
+
+      {expanded && !task.done && (
+        <div className="px-2 pb-3 pl-10 space-y-2">
+          {task.notes && <p className="text-xs text-gray-400">{task.notes}</p>}
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="text-white border-white/20 text-xs h-7">
+              <GitBranch size={12} className="mr-1" />
+              Create Branch
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

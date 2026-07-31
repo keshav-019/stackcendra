@@ -1,3 +1,4 @@
+"use client";
 
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import { NotificationCenter } from '@/components/NotificationCenter';
 import { UserDropdown } from '@/components/UserDropdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Monitor, GitBranch, Settings, Users, Calendar, MessageCircle } from 'lucide-react';
+import { LogoMark } from '@/components/Logo';
 
 export const UnifiedDashboard = () => {
   const [activeTab, setActiveTab] = useState('debugging');
@@ -25,7 +27,7 @@ export const UnifiedDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden">
       {/* Main Dashboard Layout */}
-      <div className="h-screen flex">
+      <div className="h-[calc(100vh-4.5rem)] flex">
         {/* Left Sidebar */}
         <Sidebar collapsed={sidebarCollapsed} onToggle={setSidebarCollapsed} />
         
@@ -34,10 +36,8 @@ export const UnifiedDashboard = () => {
           {/* Header */}
           <header className="h-16 bg-black/20 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-6 flex-shrink-0">
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-gradient-ai rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AI</span>
-              </div>
-              <h1 className="text-xl font-bold gradient-text">DevOps AI Platform</h1>
+              <LogoMark size={32} />
+              <h1 className="text-xl font-bold gradient-text">StackCendra</h1>
             </div>
             <div className="flex items-center space-x-2">
               <NotificationCenter />
@@ -83,38 +83,38 @@ export const UnifiedDashboard = () => {
 
               <div className="flex-1 overflow-hidden">
                 <TabsContent value="debugging" className="h-full">
-                  <div className="h-full overflow-y-auto pr-2">
+                  <div className="h-full overflow-y-auto pr-2 pb-6">
                     <DebuggingSession />
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="git" className="h-full">
-                  <div className="h-full overflow-y-auto pr-2">
+                  <div className="h-full overflow-y-auto pr-2 pb-6">
                     <GitTreeVisualization />
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="docker" className="h-full">
-                  <div className="h-full overflow-y-auto pr-2">
+                  <div className="h-full overflow-y-auto pr-2 pb-6">
                     <DockerTopology />
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="sprint" className="h-full">
-                  <div className="h-full overflow-y-auto pr-2">
+                  <div className="h-full overflow-y-auto pr-2 pb-6">
                     <SprintPlanning isManagerMode={isManagerMode} />
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="video" className="h-full">
-                  <div className="h-full overflow-y-auto pr-2">
+                  <div className="h-full overflow-y-auto pr-2 pb-6">
                     <VideoCallInterface isManagerMode={isManagerMode} />
                   </div>
                 </TabsContent>
 
                 {!isManagerMode && (
                   <TabsContent value="mytasks" className="h-full">
-                    <div className="h-full overflow-y-auto pr-2">
+                    <div className="h-full overflow-y-auto pr-2 pb-6">
                       <MyTasks />
                     </div>
                   </TabsContent>
