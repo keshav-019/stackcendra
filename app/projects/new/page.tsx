@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { mockRemoteRepos, GitProvider } from '@/lib/mock-projects';
+import { GitProvider } from '@/lib/mock-projects';
 import { Github, Gitlab, HardDrive, Check, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface RemoteRepo {
@@ -18,6 +18,12 @@ interface RemoteRepo {
   private: boolean;
   updatedAt: string;
   defaultBranch: string;
+}
+
+type RealSource = 'github' | 'gitlab';
+
+function isRealSource(source: GitProvider): source is RealSource {
+  return source === 'github' || source === 'gitlab';
 }
 
 const steps = ['Basics', 'Source', 'Connect', 'Review'] as const;
@@ -38,15 +44,20 @@ export default function NewProjectPage() {
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
-  const [githubConnected, setGithubConnected] = useState(false);
+  const [providerConnected, setProviderConnected] = useState<Record<RealSource, boolean>>({
+    github: false,
+    gitlab: false,
+  });
   const [realRepos, setRealRepos] = useState<RemoteRepo[] | null>(null);
   const [repoError, setRepoError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/integrations/github/status')
-      .then((res) => (res.ok ? res.json() : { connected: false }))
-      .then((data) => setGithubConnected(!!data.connected))
-      .catch(() => setGithubConnected(false));
+    (['github', 'gitlab'] as const).forEach((provider) => {
+      fetch(`/api/integrations/${provider}/status`)
+        .then((res) => (res.ok ? res.json() : { connected: false }))
+        .then((data) => setProviderConnected((prev) => ({ ...prev, [provider]: !!data.connected })))
+        .catch(() => setProviderConnected((prev) => ({ ...prev, [provider]: false })));
+    });
   }, []);
 
   const needsConnection = source !== 'none';
@@ -58,11 +69,11 @@ export default function NewProjectPage() {
     (step === 2 && (!needsConnection || (connected && !!selectedRepo))) ||
     step === effectiveSteps.length - 1;
 
-  const loadRealRepos = async () => {
+  const loadRealRepos = async (provider: RealSource) => {
     setConnecting(true);
     setRepoError(null);
     try {
-      const res = await fetch('/api/integrations/github/repos');
+      const res = await fetch(`/api/integrations/${provider}/repos`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to load repositories');
       setRealRepos(data.repos);
@@ -75,20 +86,12 @@ export default function NewProjectPage() {
   };
 
   const handleConnect = () => {
-    if (source === 'github') {
-      if (githubConnected) {
-        loadRealRepos();
-      } else {
-        window.location.href = '/api/integrations/github/connect?returnTo=/projects/new';
-      }
-      return;
+    if (!isRealSource(source)) return;
+    if (providerConnected[source]) {
+      loadRealRepos(source);
+    } else {
+      window.location.href = `/api/integrations/${source}/connect?returnTo=/projects/new`;
     }
-    // GitLab isn't wired up yet -- concept-only handoff.
-    setConnecting(true);
-    setTimeout(() => {
-      setConnecting(false);
-      setConnected(true);
-    }, 1200);
   };
 
   const handleCreate = () => {
@@ -189,6 +192,8 @@ export default function NewProjectPage() {
                         setSource(option.id);
                         setConnected(false);
                         setSelectedRepo(null);
+                        setRealRepos(null);
+                        setRepoError(null);
                       }}
                       className={cn(
                         'text-left rounded-lg border p-4 transition-colors',
@@ -228,7 +233,7 @@ export default function NewProjectPage() {
                   <p className="text-sm text-gray-400 mb-5 max-w-sm">
                     {source === 'github'
                       ? 'This is real: you’ll authorize StackCendra to read your repositories on github.com, then pick one below.'
-                      : 'StackCendra needs read access to repository metadata, commits, and CI/CD status. This is still a concept screen for GitLab — no real OAuth handoff yet.'}
+                      : 'This is real: you’ll authorize StackCendra to read your projects on gitlab.com, then pick one below.'}
                   </p>
                   {repoError && <p className="text-sm text-red-400 mb-3">{repoError}</p>}
                   <Button onClick={handleConnect} disabled={connecting} className="bg-gradient-ai hover:opacity-90">
@@ -246,12 +251,10 @@ export default function NewProjectPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-gray-300">Select a repository</Label>
-                    <Badge className="bg-green-500/20 text-green-300 text-xs">
-                      {source === 'github' && realRepos ? 'Connected · real repositories' : 'Connected'}
-                    </Badge>
+                    <Badge className="bg-green-500/20 text-green-300 text-xs">Connected · real repositories</Badge>
                   </div>
                   <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                    {(source === 'github' && realRepos ? realRepos : mockRemoteRepos[source]).map((repo) => (
+                    {(realRepos ?? []).map((repo) => (
                       <button
                         key={repo.fullName}
                         type="button"
@@ -266,7 +269,7 @@ export default function NewProjectPage() {
                         <div>
                           <p className="text-sm text-white font-medium">{repo.fullName}</p>
                           <p className="text-xs text-gray-500">
-                            Updated {'updatedAt' in repo ? new Date(repo.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : repo.updated}
+                            Updated {new Date(repo.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </p>
                         </div>
                         <Badge variant="outline" className="border-white/20 text-gray-400 text-xs">

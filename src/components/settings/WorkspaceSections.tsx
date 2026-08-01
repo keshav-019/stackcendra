@@ -75,12 +75,14 @@ const tierClass: Record<IntegrationTier, string> = {
   3: 'bg-gray-500/20 text-gray-300',
 };
 
-interface GithubStatus {
+type RealProvider = 'github' | 'gitlab';
+
+interface ProviderStatus {
   connected: boolean;
   login: string | null;
 }
 
-interface GithubRepoOption {
+interface RealRepoOption {
   fullName: string;
   private: boolean;
   updatedAt: string;
@@ -142,8 +144,44 @@ const RunStatusBadge: React.FC<{ status: string; conclusion: string | null }> = 
   );
 };
 
-const CiCdActivityPanel: React.FC<{ login: string | null }> = ({ login }) => {
-  const [repos, setRepos] = useState<GithubRepoOption[] | null>(null);
+interface CiProviderConfig {
+  label: string;
+  itemLabel: string;
+  reposEndpoint: string;
+  runsEndpoint: (value: string) => string;
+  jobsEndpoint: (runId: number, value: string) => string;
+  repoPlaceholder: string;
+  emptyReposMessage: string;
+  emptyRunsMessage: string;
+}
+
+const CI_PROVIDER_CONFIG: Record<RealProvider, CiProviderConfig> = {
+  github: {
+    label: 'GitHub Actions',
+    itemLabel: 'repository',
+    reposEndpoint: '/api/integrations/github/repos',
+    runsEndpoint: (repo) => `/api/integrations/github/runs?repo=${encodeURIComponent(repo)}`,
+    jobsEndpoint: (runId, repo) => `/api/integrations/github/runs/${runId}/jobs?repo=${encodeURIComponent(repo)}`,
+    repoPlaceholder: 'Select a repository',
+    emptyReposMessage: 'No repositories found for the connected GitHub account.',
+    emptyRunsMessage: 'No GitHub Actions workflow runs found for this repository.',
+  },
+  gitlab: {
+    label: 'GitLab Pipelines',
+    itemLabel: 'project',
+    reposEndpoint: '/api/integrations/gitlab/repos',
+    runsEndpoint: (project) => `/api/integrations/gitlab/pipelines?project=${encodeURIComponent(project)}`,
+    jobsEndpoint: (pipelineId, project) =>
+      `/api/integrations/gitlab/pipelines/${pipelineId}/jobs?project=${encodeURIComponent(project)}`,
+    repoPlaceholder: 'Select a project',
+    emptyReposMessage: 'No projects found for the connected GitLab account.',
+    emptyRunsMessage: 'No GitLab pipelines found for this project.',
+  },
+};
+
+const CiCdActivityPanel: React.FC<{ provider: RealProvider; login: string | null }> = ({ provider, login }) => {
+  const config = CI_PROVIDER_CONFIG[provider];
+  const [repos, setRepos] = useState<RealRepoOption[] | null>(null);
   const [reposError, setReposError] = useState<string | null>(null);
   const [selectedRepo, setSelectedRepo] = useState<string>('');
   const [runs, setRuns] = useState<WorkflowRun[] | null>(null);
@@ -155,16 +193,17 @@ const CiCdActivityPanel: React.FC<{ login: string | null }> = ({ login }) => {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/integrations/github/repos');
+        const res = await fetch(config.reposEndpoint);
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? 'Failed to load repositories');
+        if (!res.ok) throw new Error(data.error ?? `Failed to load ${config.itemLabel}s`);
         setRepos(data.repos);
         if (data.repos.length > 0) setSelectedRepo(data.repos[0].fullName);
       } catch (error) {
-        setReposError(error instanceof Error ? error.message : 'Failed to load repositories');
+        setReposError(error instanceof Error ? error.message : `Failed to load ${config.itemLabel}s`);
       }
     })();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider]);
 
   useEffect(() => {
     if (!selectedRepo) return;
@@ -173,17 +212,18 @@ const CiCdActivityPanel: React.FC<{ login: string | null }> = ({ login }) => {
     setExpandedRunId(null);
     (async () => {
       try {
-        const res = await fetch(`/api/integrations/github/runs?repo=${encodeURIComponent(selectedRepo)}`);
+        const res = await fetch(config.runsEndpoint(selectedRepo));
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? 'Failed to load workflow runs');
+        if (!res.ok) throw new Error(data.error ?? 'Failed to load runs');
         setRuns(data.runs);
       } catch (error) {
-        setRunsError(error instanceof Error ? error.message : 'Failed to load workflow runs');
+        setRunsError(error instanceof Error ? error.message : 'Failed to load runs');
         setRuns(null);
       } finally {
         setRunsLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRepo]);
 
   const toggleFailureDetails = async (run: WorkflowRun) => {
@@ -195,7 +235,7 @@ const CiCdActivityPanel: React.FC<{ login: string | null }> = ({ login }) => {
     if (failuresByRun[run.id]) return;
     setFailuresByRun((prev) => ({ ...prev, [run.id]: 'loading' }));
     try {
-      const res = await fetch(`/api/integrations/github/runs/${run.id}/jobs?repo=${encodeURIComponent(selectedRepo)}`);
+      const res = await fetch(config.jobsEndpoint(run.id, selectedRepo));
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to load failure details');
       setFailuresByRun((prev) => ({ ...prev, [run.id]: data.failures }));
@@ -210,12 +250,12 @@ const CiCdActivityPanel: React.FC<{ login: string | null }> = ({ login }) => {
         <div className="flex items-center gap-2">
           <Workflow size={16} className="text-gray-300" />
           <h3 className="text-sm font-semibold text-white">CI/CD activity</h3>
-          {login && <span className="text-xs text-gray-500">via {login}'s GitHub Actions</span>}
+          {login && <span className="text-xs text-gray-500">via {login}'s {config.label}</span>}
         </div>
         {repos && repos.length > 0 && (
           <Select value={selectedRepo} onValueChange={setSelectedRepo}>
             <SelectTrigger className="w-64 h-8 bg-white/5 border-white/10 text-white text-xs">
-              <SelectValue placeholder="Select a repository" />
+              <SelectValue placeholder={config.repoPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {repos.map((repo) => (
@@ -230,20 +270,18 @@ const CiCdActivityPanel: React.FC<{ login: string | null }> = ({ login }) => {
 
       {reposError && <p className="text-xs text-red-400">{reposError}</p>}
 
-      {!reposError && repos && repos.length === 0 && (
-        <p className="text-xs text-gray-500">No repositories found for the connected GitHub account.</p>
-      )}
+      {!reposError && repos && repos.length === 0 && <p className="text-xs text-gray-500">{config.emptyReposMessage}</p>}
 
       {repos && repos.length > 0 && (
         <>
           {runsLoading && (
             <p className="text-xs text-gray-500 flex items-center gap-1.5">
-              <Loader2 size={12} className="animate-spin" /> Loading workflow runs...
+              <Loader2 size={12} className="animate-spin" /> Loading runs...
             </p>
           )}
           {runsError && <p className="text-xs text-red-400">{runsError}</p>}
           {!runsLoading && !runsError && runs && runs.length === 0 && (
-            <p className="text-xs text-gray-500">No GitHub Actions workflow runs found for this repository.</p>
+            <p className="text-xs text-gray-500">{config.emptyRunsMessage}</p>
           )}
           {!runsLoading && !runsError && runs && runs.length > 0 && (
             <div className="space-y-2">
@@ -316,50 +354,108 @@ const CiCdActivityPanel: React.FC<{ login: string | null }> = ({ login }) => {
   );
 };
 
+const REAL_PROVIDERS: { id: RealProvider; label: string }[] = [
+  { id: 'github', label: 'GitHub' },
+  { id: 'gitlab', label: 'GitLab' },
+];
+
+const RealIntegrationRow: React.FC<{
+  integration: (typeof mockIntegrations)[number];
+  connected: boolean;
+  login: string | null;
+  busy: boolean;
+  connectHref: string;
+  onDisconnect: () => void;
+}> = ({ integration, connected, login, busy, connectHref, onDisconnect }) => {
+  const Icon = integration.icon;
+  return (
+    <Card className="bg-black/20 border-white/10 p-4 flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3 min-w-0">
+        <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+          <Icon size={16} className="text-gray-300" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-white truncate">{integration.name}</p>
+            <Badge className={`text-[10px] px-1.5 ${tierClass[integration.tier]}`}>{tierLabel[integration.tier]}</Badge>
+            <Badge className="text-[10px] px-1.5 bg-ai-primary/20 text-ai-primary">Real</Badge>
+          </div>
+          <p className="text-xs text-gray-500 mt-0.5">{connected ? `Connected as ${login}` : integration.description}</p>
+        </div>
+      </div>
+      {connected ? (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy}
+          onClick={onDisconnect}
+          className="border-white/20 text-white flex-shrink-0"
+        >
+          {busy ? <Loader2 size={14} className="animate-spin" /> : 'Disconnect'}
+        </Button>
+      ) : (
+        <Button asChild size="sm" className="bg-gradient-ai hover:opacity-90 flex-shrink-0">
+          <a href={connectHref}>Connect</a>
+        </Button>
+      )}
+    </Card>
+  );
+};
+
 export const IntegrationsSection = () => {
   const [connections, setConnections] = useState<Record<string, boolean>>(
-    Object.fromEntries(mockIntegrations.filter((i) => i.id !== 'github').map((i) => [i.id, i.connected]))
+    Object.fromEntries(
+      mockIntegrations.filter((i) => i.id !== 'github' && i.id !== 'gitlab').map((i) => [i.id, i.connected])
+    )
   );
   const [query, setQuery] = useState('');
-  const [githubStatus, setGithubStatus] = useState<GithubStatus | null>(null);
-  const [githubBusy, setGithubBusy] = useState(false);
+  const [realStatus, setRealStatus] = useState<Record<RealProvider, ProviderStatus | null>>({
+    github: null,
+    gitlab: null,
+  });
+  const [realBusy, setRealBusy] = useState<Record<RealProvider, boolean>>({ github: false, gitlab: false });
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const loadGithubStatus = async () => {
-    const res = await fetch('/api/integrations/github/status');
-    if (res.ok) setGithubStatus(await res.json());
+  const loadRealStatus = async (provider: RealProvider) => {
+    const res = await fetch(`/api/integrations/${provider}/status`);
+    if (res.ok) {
+      const data = await res.json();
+      setRealStatus((prev) => ({ ...prev, [provider]: data }));
+    }
   };
 
   useEffect(() => {
-    loadGithubStatus();
+    REAL_PROVIDERS.forEach((p) => loadRealStatus(p.id));
   }, []);
 
   useEffect(() => {
-    if (searchParams.get('github_connected')) {
-      toast.success('GitHub connected');
-      router.replace(pathname);
-      loadGithubStatus();
-    } else if (searchParams.get('github_error')) {
-      toast.error(`GitHub connection failed: ${searchParams.get('github_error')}`);
-      router.replace(pathname);
+    for (const p of REAL_PROVIDERS) {
+      if (searchParams.get(`${p.id}_connected`)) {
+        toast.success(`${p.label} connected`);
+        router.replace(pathname);
+        loadRealStatus(p.id);
+      } else if (searchParams.get(`${p.id}_error`)) {
+        toast.error(`${p.label} connection failed: ${searchParams.get(`${p.id}_error`)}`);
+        router.replace(pathname);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const disconnectGithub = async () => {
-    setGithubBusy(true);
+  const disconnectProvider = async (provider: RealProvider, label: string) => {
+    setRealBusy((prev) => ({ ...prev, [provider]: true }));
     try {
-      const res = await fetch('/api/integrations/github/disconnect', { method: 'POST' });
+      const res = await fetch(`/api/integrations/${provider}/disconnect`, { method: 'POST' });
       if (res.ok) {
-        toast.success('GitHub disconnected');
-        await loadGithubStatus();
+        toast.success(`${label} disconnected`);
+        await loadRealStatus(provider);
       } else {
-        toast.error('Failed to disconnect GitHub');
+        toast.error(`Failed to disconnect ${label}`);
       }
     } finally {
-      setGithubBusy(false);
+      setRealBusy((prev) => ({ ...prev, [provider]: false }));
     }
   };
 
@@ -380,16 +476,19 @@ export const IntegrationsSection = () => {
         <div>
           <p className="text-sm font-medium text-white">How access tokens are stored today</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            GitHub is real: the access token is encrypted (AES-256-GCM) before it's stored, and only decrypted
-            server-side when StackCendra needs to call the GitHub API on your behalf. This is an interim step for
-            the web-only phase, not the local-only vault described elsewhere in the product plan — that model
-            (credentials encrypted and decrypted only on your device) arrives with the desktop app. Every other
-            integration below is still mock UI.
+            GitHub and GitLab are real: each access token is encrypted (AES-256-GCM) before it's stored, and only
+            decrypted server-side when StackCendra needs to call that provider's API on your behalf (GitLab's tokens
+            also auto-refresh before they expire). This is an interim step for the web-only phase, not the
+            local-only vault described elsewhere in the product plan — that model (credentials encrypted and
+            decrypted only on your device) arrives with the desktop app. Every other integration below is still
+            mock UI.
           </p>
         </div>
       </Card>
 
-      {githubStatus?.connected && <CiCdActivityPanel login={githubStatus.login} />}
+      {REAL_PROVIDERS.map(
+        (p) => realStatus[p.id]?.connected && <CiCdActivityPanel key={p.id} provider={p.id} login={realStatus[p.id]?.login ?? null} />
+      )}
 
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">Integrations</h2>
@@ -415,43 +514,20 @@ export const IntegrationsSection = () => {
                 {items.map((integration) => {
                   const Icon = integration.icon;
 
-                  if (integration.id === 'github') {
-                    const connected = !!githubStatus?.connected;
+                  if (integration.id === 'github' || integration.id === 'gitlab') {
+                    const provider = integration.id as RealProvider;
+                    const label = provider === 'github' ? 'GitHub' : 'GitLab';
+                    const status = realStatus[provider];
                     return (
-                      <Card key="github" className="bg-black/20 border-white/10 p-4 flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
-                            <Icon size={16} className="text-gray-300" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-white truncate">{integration.name}</p>
-                              <Badge className={`text-[10px] px-1.5 ${tierClass[integration.tier]}`}>
-                                {tierLabel[integration.tier]}
-                              </Badge>
-                              <Badge className="text-[10px] px-1.5 bg-ai-primary/20 text-ai-primary">Real</Badge>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {connected ? `Connected as ${githubStatus?.login}` : integration.description}
-                            </p>
-                          </div>
-                        </div>
-                        {connected ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={githubBusy}
-                            onClick={disconnectGithub}
-                            className="border-white/20 text-white flex-shrink-0"
-                          >
-                            {githubBusy ? <Loader2 size={14} className="animate-spin" /> : 'Disconnect'}
-                          </Button>
-                        ) : (
-                          <Button asChild size="sm" className="bg-gradient-ai hover:opacity-90 flex-shrink-0">
-                            <a href="/api/integrations/github/connect">Connect</a>
-                          </Button>
-                        )}
-                      </Card>
+                      <RealIntegrationRow
+                        key={provider}
+                        integration={integration}
+                        connected={!!status?.connected}
+                        login={status?.login ?? null}
+                        busy={realBusy[provider]}
+                        connectHref={`/api/integrations/${provider}/connect`}
+                        onDisconnect={() => disconnectProvider(provider, label)}
+                      />
                     );
                   }
 
