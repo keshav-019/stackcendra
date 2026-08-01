@@ -103,6 +103,8 @@ Until explicitly promoted by a release decision, StackCendra will not:
 | D-019 | Adopt Vitest (unit/component) and Playwright (E2E) as the web shell's test frameworks, with a synthetic-JWT-cookie strategy for testing authenticated routes without automating real OAuth | Accepted |
 | D-020 | Request GitHub repo access only when connecting a project (Settings or Add Project wizard), never bundled into sign-in | Accepted |
 | D-021 | Use a second, separate GitHub OAuth App for repo-scoped integration access, with its own encrypted server-side token storage, distinct from the sign-in app | Accepted |
+| D-022 | Fix the sign-in method to whichever provider (GitHub or Google) the user chose at signup; do not offer linking a second sign-in provider to the same account afterward | Accepted |
+| D-023 | Use the repo-scoped GitHub token (D-021) to show real CI/CD activity — GitHub Actions workflow run status and failed-step detail — in Settings → Integrations | Accepted |
 
 ## Open decisions
 

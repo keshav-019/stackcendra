@@ -42,3 +42,42 @@ test.describe('GitHub integration connect flow (authenticated)', () => {
     await freshContext.close();
   });
 });
+
+test.describe('CI/CD activity (workflow runs) endpoints', () => {
+  test.beforeEach(async ({ context }) => {
+    await signInAs(context);
+  });
+
+  test('GET /api/integrations/github/runs requires a repo query parameter', async ({ page }) => {
+    const res = await page.request.get('/api/integrations/github/runs');
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/repo/i);
+  });
+
+  test('GET /api/integrations/github/runs rejects a malformed repo name without ever calling GitHub', async ({ page }) => {
+    const res = await page.request.get('/api/integrations/github/runs?repo=' + encodeURIComponent('../../etc/passwd'));
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/invalid/i);
+  });
+
+  test('GET /api/integrations/github/runs/:id/jobs rejects a non-numeric run id', async ({ page }) => {
+    const res = await page.request.get('/api/integrations/github/runs/not-a-number/jobs?repo=octocat/hello-world');
+    expect(res.status()).toBe(400);
+  });
+
+  test('GET /api/integrations/github/runs/:id/jobs requires a repo query parameter', async ({ page }) => {
+    const res = await page.request.get('/api/integrations/github/runs/42/jobs');
+    expect(res.status()).toBe(400);
+  });
+
+  test('both endpoints redirect unauthenticated requests away from returning data', async ({ page }) => {
+    const freshContext = await page.context().browser()!.newContext();
+    const runsRes = await freshContext.request.get('/api/integrations/github/runs?repo=octocat/hello-world');
+    expect(runsRes.status()).toBe(401);
+    const jobsRes = await freshContext.request.get('/api/integrations/github/runs/42/jobs?repo=octocat/hello-world');
+    expect(jobsRes.status()).toBe(401);
+    await freshContext.close();
+  });
+});

@@ -37,7 +37,7 @@ test.describe('Cross-page navigation (authenticated)', () => {
     await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Security' }).click();
-    await expect(page.getByRole('heading', { name: 'Connected sign-in methods' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign-in method', exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Plan & billing' }).click();
     await expect(page.getByRole('heading', { name: 'Plan & billing' })).toBeVisible();

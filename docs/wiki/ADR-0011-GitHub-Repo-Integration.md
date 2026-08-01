@@ -23,6 +23,7 @@ The resulting access token is encrypted (AES-256-GCM, `src/lib/crypto.ts`) befor
 - Settings → Integrations' GitHub row is now real (live status, live connect/disconnect) while every other integration in that list remains mock UI — the row is labeled "Real" so this isn't ambiguous in the UI itself.
 - The Add Project wizard's GitHub step uses real repositories via `GET /api/integrations/github/repos` once connected, falling back to the existing mock repo list for GitLab (still unconnected) and for GitHub before the user has connected.
 - No migration tool is chosen yet, so `integrations-schema.sql` is applied by hand, same as `auth-schema.sql` — see the open decision in [Risks, Non-Goals, and Decision Log](https://github.com/keshav-019/stackcendra/wiki/Risks-Non-Goals-and-Decision-Log).
+- **Update (2026-08-01):** the same `repo` scope now also powers a "CI/CD activity" panel in Settings → Integrations — real GitHub Actions workflow run status (queued/running/success/failure) per repository, with failed-run detail (job name and the specific failing step) fetched on demand via `GET /repos/{repo}/actions/runs` and `.../actions/runs/{id}/jobs`. This is the first real payoff of the repo-scoped token beyond just listing repositories, and previews the Git Intelligence and Delivery capability ([Phase 7](https://github.com/keshav-019/stackcendra/wiki/Phase-7-Git-Intelligence-and-Delivery)) with real data instead of the `/projects/[id]` mock run list.
 
 ## Alternatives considered
 

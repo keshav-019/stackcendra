@@ -10,8 +10,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { mockIntegrations, integrationCategories, IntegrationTier } from '@/lib/mock-integrations';
-import { ShieldCheck, Search, User, Building2, Check, Plus, KeyRound, Copy, Trash2, Users, Loader2 } from 'lucide-react';
+import {
+  ShieldCheck,
+  Search,
+  User,
+  Building2,
+  Check,
+  Plus,
+  KeyRound,
+  Copy,
+  Trash2,
+  Users,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  CircleDashed,
+  ExternalLink,
+  ChevronDown,
+  ChevronRight,
+  GitBranch,
+  Workflow,
+} from 'lucide-react';
 
 export type Edition = 'individual' | 'enterprise';
 
@@ -58,6 +79,242 @@ interface GithubStatus {
   connected: boolean;
   login: string | null;
 }
+
+interface GithubRepoOption {
+  fullName: string;
+  private: boolean;
+  updatedAt: string;
+  defaultBranch: string;
+}
+
+interface WorkflowRun {
+  id: number;
+  name: string;
+  displayTitle: string;
+  status: string;
+  conclusion: string | null;
+  headBranch: string;
+  headSha: string;
+  event: string;
+  actorLogin: string | null;
+  runNumber: number;
+  htmlUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface JobFailure {
+  jobName: string;
+  stepName: string | null;
+  conclusion: string | null;
+}
+
+const RunStatusBadge: React.FC<{ status: string; conclusion: string | null }> = ({ status, conclusion }) => {
+  if (status !== 'completed') {
+    return (
+      <span className="flex items-center gap-1.5 text-xs text-amber-300">
+        <Loader2 size={14} className="animate-spin" />
+        {status === 'queued' ? 'Queued' : 'Running'}
+      </span>
+    );
+  }
+  if (conclusion === 'success') {
+    return (
+      <span className="flex items-center gap-1.5 text-xs text-green-300">
+        <CheckCircle2 size={14} />
+        Success
+      </span>
+    );
+  }
+  if (conclusion === 'failure') {
+    return (
+      <span className="flex items-center gap-1.5 text-xs text-red-300">
+        <XCircle size={14} />
+        Failed
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-gray-400">
+      <CircleDashed size={14} />
+      {conclusion ?? 'Unknown'}
+    </span>
+  );
+};
+
+const CiCdActivityPanel: React.FC<{ login: string | null }> = ({ login }) => {
+  const [repos, setRepos] = useState<GithubRepoOption[] | null>(null);
+  const [reposError, setReposError] = useState<string | null>(null);
+  const [selectedRepo, setSelectedRepo] = useState<string>('');
+  const [runs, setRuns] = useState<WorkflowRun[] | null>(null);
+  const [runsError, setRunsError] = useState<string | null>(null);
+  const [runsLoading, setRunsLoading] = useState(false);
+  const [expandedRunId, setExpandedRunId] = useState<number | null>(null);
+  const [failuresByRun, setFailuresByRun] = useState<Record<number, JobFailure[] | 'loading' | 'error'>>({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/integrations/github/repos');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Failed to load repositories');
+        setRepos(data.repos);
+        if (data.repos.length > 0) setSelectedRepo(data.repos[0].fullName);
+      } catch (error) {
+        setReposError(error instanceof Error ? error.message : 'Failed to load repositories');
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedRepo) return;
+    setRunsLoading(true);
+    setRunsError(null);
+    setExpandedRunId(null);
+    (async () => {
+      try {
+        const res = await fetch(`/api/integrations/github/runs?repo=${encodeURIComponent(selectedRepo)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Failed to load workflow runs');
+        setRuns(data.runs);
+      } catch (error) {
+        setRunsError(error instanceof Error ? error.message : 'Failed to load workflow runs');
+        setRuns(null);
+      } finally {
+        setRunsLoading(false);
+      }
+    })();
+  }, [selectedRepo]);
+
+  const toggleFailureDetails = async (run: WorkflowRun) => {
+    if (expandedRunId === run.id) {
+      setExpandedRunId(null);
+      return;
+    }
+    setExpandedRunId(run.id);
+    if (failuresByRun[run.id]) return;
+    setFailuresByRun((prev) => ({ ...prev, [run.id]: 'loading' }));
+    try {
+      const res = await fetch(`/api/integrations/github/runs/${run.id}/jobs?repo=${encodeURIComponent(selectedRepo)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Failed to load failure details');
+      setFailuresByRun((prev) => ({ ...prev, [run.id]: data.failures }));
+    } catch {
+      setFailuresByRun((prev) => ({ ...prev, [run.id]: 'error' }));
+    }
+  };
+
+  return (
+    <Card className="bg-black/20 border-white/10 p-4 mb-6">
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Workflow size={16} className="text-gray-300" />
+          <h3 className="text-sm font-semibold text-white">CI/CD activity</h3>
+          {login && <span className="text-xs text-gray-500">via {login}'s GitHub Actions</span>}
+        </div>
+        {repos && repos.length > 0 && (
+          <Select value={selectedRepo} onValueChange={setSelectedRepo}>
+            <SelectTrigger className="w-64 h-8 bg-white/5 border-white/10 text-white text-xs">
+              <SelectValue placeholder="Select a repository" />
+            </SelectTrigger>
+            <SelectContent>
+              {repos.map((repo) => (
+                <SelectItem key={repo.fullName} value={repo.fullName}>
+                  {repo.fullName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      {reposError && <p className="text-xs text-red-400">{reposError}</p>}
+
+      {!reposError && repos && repos.length === 0 && (
+        <p className="text-xs text-gray-500">No repositories found for the connected GitHub account.</p>
+      )}
+
+      {repos && repos.length > 0 && (
+        <>
+          {runsLoading && (
+            <p className="text-xs text-gray-500 flex items-center gap-1.5">
+              <Loader2 size={12} className="animate-spin" /> Loading workflow runs...
+            </p>
+          )}
+          {runsError && <p className="text-xs text-red-400">{runsError}</p>}
+          {!runsLoading && !runsError && runs && runs.length === 0 && (
+            <p className="text-xs text-gray-500">No GitHub Actions workflow runs found for this repository.</p>
+          )}
+          {!runsLoading && !runsError && runs && runs.length > 0 && (
+            <div className="space-y-2">
+              {runs.map((run) => {
+                const failures = failuresByRun[run.id];
+                const isExpanded = expandedRunId === run.id;
+                return (
+                  <div key={run.id} className="rounded-lg border border-white/10 bg-white/5">
+                    <div className="flex items-center justify-between gap-3 p-3">
+                      <div className="min-w-0">
+                        <p className="text-sm text-white truncate">{run.displayTitle}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                          <span className="flex items-center gap-1">
+                            <GitBranch size={12} />
+                            {run.headBranch}
+                          </span>
+                          <span>#{run.runNumber}</span>
+                          <span>{run.event}</span>
+                          {run.actorLogin && <span>by {run.actorLogin}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <RunStatusBadge status={run.status} conclusion={run.conclusion} />
+                        {run.conclusion === 'failure' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => toggleFailureDetails(run)}
+                            className="h-7 px-2 text-xs text-red-300 hover:text-red-200"
+                          >
+                            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            Error
+                          </Button>
+                        )}
+                        <Button asChild size="sm" variant="ghost" className="h-7 w-7 p-0 text-gray-400">
+                          <a href={run.htmlUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink size={14} />
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                    {isExpanded && (
+                      <div className="border-t border-white/10 px-3 py-2">
+                        {failures === 'loading' && (
+                          <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                            <Loader2 size={12} className="animate-spin" /> Loading failure details...
+                          </p>
+                        )}
+                        {failures === 'error' && <p className="text-xs text-red-400">Failed to load failure details.</p>}
+                        {Array.isArray(failures) && failures.length === 0 && (
+                          <p className="text-xs text-gray-500">No failed jobs found for this run.</p>
+                        )}
+                        {Array.isArray(failures) &&
+                          failures.map((failure, index) => (
+                            <p key={index} className="text-xs text-red-300">
+                              {failure.jobName}
+                              {failure.stepName ? ` -- step "${failure.stepName}" failed` : ' failed'}
+                            </p>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </Card>
+  );
+};
 
 export const IntegrationsSection = () => {
   const [connections, setConnections] = useState<Record<string, boolean>>(
@@ -131,6 +388,8 @@ export const IntegrationsSection = () => {
           </p>
         </div>
       </Card>
+
+      {githubStatus?.connected && <CiCdActivityPanel login={githubStatus.login} />}
 
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">Integrations</h2>

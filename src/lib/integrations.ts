@@ -99,3 +99,111 @@ export async function getGithubRepos(userId: string): Promise<GithubRepo[]> {
   if (!accessToken) throw new Error('GitHub is not connected for this user');
   return fetchGithubRepos(accessToken);
 }
+
+export interface GithubWorkflowRun {
+  id: number;
+  name: string;
+  displayTitle: string;
+  status: string;
+  conclusion: string | null;
+  headBranch: string;
+  headSha: string;
+  event: string;
+  actorLogin: string | null;
+  runNumber: number;
+  htmlUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GithubJobFailure {
+  jobName: string;
+  stepName: string | null;
+  conclusion: string | null;
+}
+
+export const GITHUB_REPO_FULL_NAME_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+export async function fetchGithubWorkflowRuns(accessToken: string, repoFullName: string): Promise<GithubWorkflowRun[]> {
+  const res = await fetch(`https://api.github.com/repos/${repoFullName}/actions/runs?per_page=15`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'stackcendra',
+    },
+  });
+  if (!res.ok) throw new Error(`GitHub actions/runs failed: ${res.status}`);
+  const data = await res.json();
+  return (data.workflow_runs ?? []).map(
+    (run: {
+      id: number;
+      name: string | null;
+      display_title: string;
+      status: string;
+      conclusion: string | null;
+      head_branch: string;
+      head_sha: string;
+      event: string;
+      actor: { login: string } | null;
+      run_number: number;
+      html_url: string;
+      created_at: string;
+      updated_at: string;
+    }) => ({
+      id: run.id,
+      name: run.name ?? run.display_title,
+      displayTitle: run.display_title,
+      status: run.status,
+      conclusion: run.conclusion,
+      headBranch: run.head_branch,
+      headSha: run.head_sha,
+      event: run.event,
+      actorLogin: run.actor?.login ?? null,
+      runNumber: run.run_number,
+      htmlUrl: run.html_url,
+      createdAt: run.created_at,
+      updatedAt: run.updated_at,
+    })
+  );
+}
+
+export async function fetchGithubRunFailures(
+  accessToken: string,
+  repoFullName: string,
+  runId: number
+): Promise<GithubJobFailure[]> {
+  const res = await fetch(`https://api.github.com/repos/${repoFullName}/actions/runs/${runId}/jobs`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'stackcendra',
+    },
+  });
+  if (!res.ok) throw new Error(`GitHub actions run jobs failed: ${res.status}`);
+  const data = await res.json();
+  const failures: GithubJobFailure[] = [];
+  for (const job of data.jobs ?? []) {
+    if (job.conclusion !== 'failure') continue;
+    const failedStep = (job.steps ?? []).find((step: { conclusion: string | null }) => step.conclusion === 'failure');
+    failures.push({
+      jobName: job.name,
+      stepName: failedStep?.name ?? null,
+      conclusion: job.conclusion,
+    });
+  }
+  return failures;
+}
+
+export async function getGithubWorkflowRuns(userId: string, repoFullName: string): Promise<GithubWorkflowRun[]> {
+  if (!GITHUB_REPO_FULL_NAME_RE.test(repoFullName)) throw new Error('Invalid repository name');
+  const accessToken = await getAccessToken(userId, 'github');
+  if (!accessToken) throw new Error('GitHub is not connected for this user');
+  return fetchGithubWorkflowRuns(accessToken, repoFullName);
+}
+
+export async function getGithubRunFailures(userId: string, repoFullName: string, runId: number): Promise<GithubJobFailure[]> {
+  if (!GITHUB_REPO_FULL_NAME_RE.test(repoFullName)) throw new Error('Invalid repository name');
+  const accessToken = await getAccessToken(userId, 'github');
+  if (!accessToken) throw new Error('GitHub is not connected for this user');
+  return fetchGithubRunFailures(accessToken, repoFullName, runId);
+}

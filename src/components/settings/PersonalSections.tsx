@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,11 +57,7 @@ export const SecuritySection = () => {
   const { data: session } = useSession();
   const provider = session?.user?.provider;
   const isSignedIn = !!session;
-
-  const methods: { id: string; label: string; icon: React.ElementType }[] = [
-    { id: 'github', label: 'GitHub', icon: Github },
-    { id: 'google', label: 'Google', icon: Mail },
-  ];
+  const ProviderIcon = provider === 'google' ? Mail : Github;
 
   return (
     <div className="space-y-6">
@@ -92,46 +88,26 @@ export const SecuritySection = () => {
       </Card>
 
       <Card className="bg-black/20 border-white/10 p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Connected sign-in methods</h2>
-        <div className="space-y-3">
-          {methods.map((method) => {
-            const Icon = method.icon;
-            const connected = provider === method.id;
-            return (
-              <div
-                key={method.id}
-                className={cn(
-                  'flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5',
-                  !connected && 'opacity-70'
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon size={18} className={connected ? 'text-white' : 'text-gray-400'} />
-                  <div>
-                    <p className="text-sm text-white">{method.label}</p>
-                    <p className="text-xs text-gray-500">
-                      {connected ? `Connected as ${session.user?.name ?? session.user?.email}` : 'Not connected'}
-                    </p>
-                  </div>
-                </div>
-                {connected ? (
-                  <Badge className="bg-green-500/20 text-green-300 text-xs">
-                    <Check size={12} className="mr-1" />
-                    Connected
-                  </Badge>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => signIn(method.id, { callbackUrl: '/settings' })}
-                    className="bg-gradient-ai hover:opacity-90"
-                  >
-                    Connect
-                  </Button>
-                )}
-              </div>
-            );
-          })}
+        <h2 className="text-lg font-semibold text-white mb-4">Sign-in method</h2>
+        <div className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5">
+          <div className="flex items-center gap-3">
+            <ProviderIcon size={18} className="text-white" />
+            <div>
+              <p className="text-sm text-white">{provider === 'google' ? 'Google' : 'GitHub'}</p>
+              <p className="text-xs text-gray-500">
+                {isSignedIn ? `Signed in as ${session?.user?.name ?? session?.user?.email}` : 'Not signed in'}
+              </p>
+            </div>
+          </div>
+          <Badge className="bg-green-500/20 text-green-300 text-xs">
+            <Check size={12} className="mr-1" />
+            Active
+          </Badge>
         </div>
+        <p className="text-xs text-gray-500 mt-3">
+          Chosen once at signup and used for every sign-in since. To switch providers, create a new account with the
+          other one — StackCendra doesn't link multiple sign-in methods to a single account.
+        </p>
       </Card>
     </div>
   );
