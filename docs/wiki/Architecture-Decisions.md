@@ -14,6 +14,7 @@ Architecture decision records preserve why the project chose a direction and wha
 - [ADR 0008 — Use Auth.js with GitHub OAuth for initial web sign-in](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth)
 - [ADR 0009 — Gate the dashboard and all authenticated routes behind a real session](https://github.com/keshav-019/stackcendra/wiki/ADR-0009-Route-Gating)
 - [ADR 0010 — Persist users and OAuth accounts to Postgres via the official Auth.js adapter](https://github.com/keshav-019/stackcendra/wiki/ADR-0010-Postgres-User-Persistence)
+- [ADR 0011 — Separate GitHub OAuth App for repo-scoped integration access](https://github.com/keshav-019/stackcendra/wiki/ADR-0011-GitHub-Repo-Integration)
 
 ## Record format
 

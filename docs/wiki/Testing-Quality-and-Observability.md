@@ -9,7 +9,7 @@ Most of this page describes the target testing strategy for the full multi-langu
 - Config: `vitest.config.ts` (jsdom environment, `@` path alias matching `tsconfig.json`, v8 coverage) and `vitest.setup.ts` (jest-dom matchers, a `ResizeObserver` stub for Radix UI, and default mocks for `next/navigation` and `next-auth/react`).
 - Convention: colocated `*.test.ts`/`*.test.tsx` files next to the source they test, not a mirrored test tree.
 - Run with `npm run test` (single run), `npm run test:watch`, or `npm run test:coverage`.
-- Current coverage: `cn()` class-merging behavior, mock-data integrity for projects and integrations (unique ids, cross-references between AI fixes and CI runs, confidence bounds), `settings-sections.ts` structure, the `Logo`/`LogoMark` component, the Signup edition-selector toggle, and the Team Call live/empty-state toggle.
+- Current coverage: `cn()` class-merging behavior, mock-data integrity for projects and integrations (unique ids, cross-references between AI fixes and CI runs, confidence bounds), `settings-sections.ts` structure, the `Logo`/`LogoMark` component, the Signup edition-selector toggle, the Team Call live/empty-state toggle, and `src/lib/crypto.ts`'s encrypt/decrypt round-trip (including that tampering with a ciphertext throws rather than silently returning garbage).
 
 ### End-to-end tests — Playwright
 
@@ -23,11 +23,20 @@ Most of this page describes the target testing strategy for the full multi-langu
 
 Writing the E2E tab-switching test caught a genuine hydration bug that had survived the earlier hydration fix: `AIAssistant`'s seeded message timestamps used `toLocaleTimeString([], {...})`, and even after pinning `timeZone: 'UTC'`, the *locale* was still left to the runtime default — Node (server) and Chromium (client) resolved that default differently, rendering `02:23 PM` server-side and `02:23 pm` client-side. React's hydration-mismatch recovery discarded and regenerated a large enough part of the tree that click handling on the (unrelated, sibling) dashboard tabs broke transiently. The fix pins both the timezone and the locale explicitly (`toLocaleTimeString('en-US', { timeZone: 'UTC', ... })`). The wiki maintenance habit applies here too: the earlier hydration-safety rule in [Concept UI Screens](https://github.com/keshav-019/stackcendra/wiki/Concept-UI-Screens) only mentioned timezone, not locale — it now covers both.
 
+### Lessons from testing real OAuth redirects (GitHub integration connect flow)
+
+Adding E2E coverage for the GitHub repo-access connect flow (see [ADR 0011](https://github.com/keshav-019/stackcendra/wiki/ADR-0011-GitHub-Repo-Integration)) surfaced three genuine Playwright gotchas, each worth remembering rather than re-discovering:
+
+1. **Letting the browser fully navigate to a real OAuth provider is unreliable.** Both GitHub and Google intermittently interfere with automated/headless sign-in navigation even when the constructed URL is verified correct by direct inspection. The fix that stuck: verify URL construction at the API level instead of the UI level — either read the `Location` header of our own server's redirect response directly (`page.request.get(url, { maxRedirects: 0 })`), or, for Auth.js's own sign-in endpoints, replicate what `next-auth/react`'s `signIn()` does under the hood (fetch a CSRF token, `POST /api/auth/signin/:provider` with the `X-Auth-Return-Redirect: 1` header) to get the authorize URL back as JSON without the browser ever navigating anywhere. `page.route()`-based interception-and-abort was tried first and abandoned: GitHub's own redirect chain from `/login/oauth/authorize` to `/login` isn't reliably visible to it for this navigation pattern.
+2. **`page.waitForRequest('**/some/path')` is a strict suffix match against the full URL, query string included.** A request to `/api/auth/signin/google?` (an empty but present query string) does not match a glob pattern with no trailing wildcard. Prefer a predicate — `page.waitForRequest((req) => req.url().includes('/api/auth/signin/google'))` — over a glob string when the exact query string isn't guaranteed.
+3. **A click can silently no-op if it lands before React finishes hydrating.** The button is visible and "actionable" by Playwright's own actionability checks well before its `onClick` handler is attached in an SSR/hydration app. `await page.waitForLoadState('networkidle')` after `page.goto()` and before the first interaction closed this gap in practice.
+
 ### Known gaps
 
 - No CI workflow runs these yet (still local-only); wiring GitHub Actions to run `npm run test` and `npm run test:e2e` on every PR is part of P0-011, not done.
 - Playwright only runs Chromium; Firefox/WebKit projects are easy to add later but weren't necessary to catch real bugs yet.
 - No visual regression testing.
+- One E2E test (`github-integration.spec.ts`'s direct status-endpoint check) has been observed to fail with a Postgres `ETIMEDOUT` specifically when the full 30-test suite runs at full parallelism, while passing consistently in isolation and via every other test that reaches the same endpoint indirectly through a page load in the same run. This points to Neon free-tier connection handling under peak concurrent load from parallel workers, not an application defect — `src/lib/db.ts`'s `connectionTimeoutMillis` was widened accordingly, and `playwright.config.ts` gives local runs one retry. Running E2E against a production build (`next build && next start`) instead of `next dev` would also remove on-demand route compilation as a contributing factor, if this resurfaces.
 
 ## Quality objective
 

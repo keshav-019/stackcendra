@@ -18,14 +18,14 @@ Do not create accounts or projects from the "Later" tiers until the phase that n
 
 These unblock turning the current concept screens (`/login`, `/signup`, `/projects/new`'s GitHub connect step, and eventual hosting) into real functionality.
 
-### 1. GitHub OAuth App
+### 1. GitHub OAuth App (sign-in)
 
-Needed for: the "Continue with GitHub" step in the Add Project wizard, and eventually real repository/CI status.
+Needed for: "Continue with GitHub" on `/login` and `/signup`. This app is identity-only (`read:user user:email`) — it never sees repo access. See section 1c for the separate app that does.
 
 1. Go to GitHub → your avatar → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**.
 2. Application name: `StackCendra (dev)`.
 3. Homepage URL: `http://localhost:8080`.
-4. Authorization callback URL: `http://localhost:8080/api/auth/callback/github` (this exact path only matters once we wire a real OAuth flow — for now any value is fine, it can be edited later).
+4. Authorization callback URL: `http://localhost:8080/api/auth/callback/github` (this exact path matters — Auth.js expects it).
 5. Register the application. Copy the **Client ID**.
 6. Click **Generate a new client secret**. Copy it immediately — GitHub only shows it once.
 7. Store as:
@@ -51,6 +51,31 @@ Needed for: activating the "Google" sign-in button on `/login` and `/signup`, wh
    GOOGLE_OAUTH_CLIENT_SECRET=
    ```
 9. Once these are set in `.env.local` and the dev server is restarted, the Google provider is already wired into `src/lib/auth.ts` — only the disabled button in the UI needs flipping to active.
+
+### 1c. GitHub OAuth App (integration)
+
+Needed for: real repo access — the "Connect" button on Settings → Integrations' GitHub row, and the Add Project wizard's repository picker. Separate from the sign-in app in section 1 because classic GitHub OAuth Apps support only one callback URL each, and repo access is deliberately requested only here, never at login (see [D-020](https://github.com/keshav-019/stackcendra/wiki/Risks-Non-Goals-and-Decision-Log) and [ADR 0011](https://github.com/keshav-019/stackcendra/wiki/ADR-0011-GitHub-Repo-Integration)).
+
+1. GitHub → your avatar → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**.
+2. Application name: `StackCendra Integrations (dev)` — distinct name so it's visually distinguishable from the sign-in app in your GitHub authorized-apps list.
+3. Homepage URL: `http://localhost:8080`.
+4. Authorization callback URL: `http://localhost:8080/api/integrations/github/callback` (this exact path matters).
+5. Register the application, copy the **Client ID**.
+6. Click **Generate a new client secret**, copy it immediately.
+7. Store as:
+   ```
+   GITHUB_INTEGRATION_CLIENT_ID=
+   GITHUB_INTEGRATION_CLIENT_SECRET=
+   ```
+8. Also generate a dedicated encryption key for storing the resulting access token (used by `src/lib/crypto.ts`, distinct from `AUTH_SECRET`):
+   ```
+   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+   ```
+   Store as:
+   ```
+   INTEGRATION_ENCRYPTION_KEY=
+   ```
+9. Apply `db/integrations-schema.sql` to the database if it hasn't been already (creates the `integration_connections` table).
 
 ### 2. Vercel (web hosting)
 
@@ -159,7 +184,8 @@ Self-host first (LiveKit has a local dev server mode, no account needed) before 
 | Platform | Status |
 | --- | --- |
 | Firebase | Evaluated, rejected — see [D-013](https://github.com/keshav-019/stackcendra/wiki/Risks-Non-Goals-and-Decision-Log) |
-| GitHub OAuth App | Created; wired into real sign-in via [ADR 0008](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth) |
+| GitHub OAuth App (sign-in) | Created; wired into real sign-in via [ADR 0008](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth) |
+| GitHub OAuth App (integration) | Created; wired into a real repo-access connect flow via [ADR 0011](https://github.com/keshav-019/stackcendra/wiki/ADR-0011-GitHub-Repo-Integration) — Settings → Integrations and the Add Project wizard |
 | Google OAuth Client | Created and wired in; "Continue with Google" is live on `/login` and `/signup` |
 | Vercel | Not yet created |
 | Cloudflare | Account and R2 credentials created; not yet wired into any app code |
