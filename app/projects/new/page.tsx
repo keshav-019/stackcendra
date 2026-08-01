@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProjectPageShell } from '@/components/projects/ProjectPageShell';
 import { Card } from '@/components/ui/card';
@@ -12,6 +12,13 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { mockRemoteRepos, GitProvider } from '@/lib/mock-projects';
 import { Github, Gitlab, HardDrive, Check, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
+
+interface RemoteRepo {
+  fullName: string;
+  private: boolean;
+  updatedAt: string;
+  defaultBranch: string;
+}
 
 const steps = ['Basics', 'Source', 'Connect', 'Review'] as const;
 
@@ -31,6 +38,16 @@ export default function NewProjectPage() {
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
+  const [githubConnected, setGithubConnected] = useState(false);
+  const [realRepos, setRealRepos] = useState<RemoteRepo[] | null>(null);
+  const [repoError, setRepoError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/integrations/github/status')
+      .then((res) => (res.ok ? res.json() : { connected: false }))
+      .then((data) => setGithubConnected(!!data.connected))
+      .catch(() => setGithubConnected(false));
+  }, []);
 
   const needsConnection = source !== 'none';
   const effectiveSteps = needsConnection ? steps : (steps.filter((s) => s !== 'Connect') as unknown as typeof steps);
@@ -41,7 +58,32 @@ export default function NewProjectPage() {
     (step === 2 && (!needsConnection || (connected && !!selectedRepo))) ||
     step === effectiveSteps.length - 1;
 
+  const loadRealRepos = async () => {
+    setConnecting(true);
+    setRepoError(null);
+    try {
+      const res = await fetch('/api/integrations/github/repos');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Failed to load repositories');
+      setRealRepos(data.repos);
+      setConnected(true);
+    } catch (err) {
+      setRepoError(err instanceof Error ? err.message : 'Failed to load repositories');
+    } finally {
+      setConnecting(false);
+    }
+  };
+
   const handleConnect = () => {
+    if (source === 'github') {
+      if (githubConnected) {
+        loadRealRepos();
+      } else {
+        window.location.href = '/api/integrations/github/connect?returnTo=/projects/new';
+      }
+      return;
+    }
+    // GitLab isn't wired up yet -- concept-only handoff.
     setConnecting(true);
     setTimeout(() => {
       setConnecting(false);
@@ -184,8 +226,11 @@ export default function NewProjectPage() {
                     Connect your {source === 'github' ? 'GitHub' : 'GitLab'} account
                   </h3>
                   <p className="text-sm text-gray-400 mb-5 max-w-sm">
-                    StackCendra needs read access to repository metadata, commits, and CI/CD status. It never receives your Git credentials directly — this is a concept screen for the OAuth handoff.
+                    {source === 'github'
+                      ? 'This is real: you’ll authorize StackCendra to read your repositories on github.com, then pick one below.'
+                      : 'StackCendra needs read access to repository metadata, commits, and CI/CD status. This is still a concept screen for GitLab — no real OAuth handoff yet.'}
                   </p>
+                  {repoError && <p className="text-sm text-red-400 mb-3">{repoError}</p>}
                   <Button onClick={handleConnect} disabled={connecting} className="bg-gradient-ai hover:opacity-90">
                     {connecting ? (
                       <>
@@ -201,10 +246,12 @@ export default function NewProjectPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-gray-300">Select a repository</Label>
-                    <Badge className="bg-green-500/20 text-green-300 text-xs">Connected</Badge>
+                    <Badge className="bg-green-500/20 text-green-300 text-xs">
+                      {source === 'github' && realRepos ? 'Connected · real repositories' : 'Connected'}
+                    </Badge>
                   </div>
                   <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                    {mockRemoteRepos[source].map((repo) => (
+                    {(source === 'github' && realRepos ? realRepos : mockRemoteRepos[source]).map((repo) => (
                       <button
                         key={repo.fullName}
                         type="button"
@@ -218,7 +265,9 @@ export default function NewProjectPage() {
                       >
                         <div>
                           <p className="text-sm text-white font-medium">{repo.fullName}</p>
-                          <p className="text-xs text-gray-500">Updated {repo.updated}</p>
+                          <p className="text-xs text-gray-500">
+                            Updated {'updatedAt' in repo ? new Date(repo.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : repo.updated}
+                          </p>
                         </div>
                         <Badge variant="outline" className="border-white/20 text-gray-400 text-xs">
                           {repo.private ? 'Private' : 'Public'}

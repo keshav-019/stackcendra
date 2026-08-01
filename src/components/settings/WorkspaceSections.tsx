@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { mockIntegrations, integrationCategories, IntegrationTier } from '@/lib/mock-integrations';
-import { ShieldCheck, Search, User, Building2, Check, Plus, KeyRound, Copy, Trash2, Users } from 'lucide-react';
+import { ShieldCheck, Search, User, Building2, Check, Plus, KeyRound, Copy, Trash2, Users, Loader2 } from 'lucide-react';
 
 export type Edition = 'individual' | 'enterprise';
 
@@ -52,11 +54,57 @@ const tierClass: Record<IntegrationTier, string> = {
   3: 'bg-gray-500/20 text-gray-300',
 };
 
+interface GithubStatus {
+  connected: boolean;
+  login: string | null;
+}
+
 export const IntegrationsSection = () => {
   const [connections, setConnections] = useState<Record<string, boolean>>(
-    Object.fromEntries(mockIntegrations.map((i) => [i.id, i.connected]))
+    Object.fromEntries(mockIntegrations.filter((i) => i.id !== 'github').map((i) => [i.id, i.connected]))
   );
   const [query, setQuery] = useState('');
+  const [githubStatus, setGithubStatus] = useState<GithubStatus | null>(null);
+  const [githubBusy, setGithubBusy] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const loadGithubStatus = async () => {
+    const res = await fetch('/api/integrations/github/status');
+    if (res.ok) setGithubStatus(await res.json());
+  };
+
+  useEffect(() => {
+    loadGithubStatus();
+  }, []);
+
+  useEffect(() => {
+    if (searchParams.get('github_connected')) {
+      toast.success('GitHub connected');
+      router.replace(pathname);
+      loadGithubStatus();
+    } else if (searchParams.get('github_error')) {
+      toast.error(`GitHub connection failed: ${searchParams.get('github_error')}`);
+      router.replace(pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const disconnectGithub = async () => {
+    setGithubBusy(true);
+    try {
+      const res = await fetch('/api/integrations/github/disconnect', { method: 'POST' });
+      if (res.ok) {
+        toast.success('GitHub disconnected');
+        await loadGithubStatus();
+      } else {
+        toast.error('Failed to disconnect GitHub');
+      }
+    } finally {
+      setGithubBusy(false);
+    }
+  };
 
   const toggleConnection = (id: string) => {
     setConnections((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -73,10 +121,13 @@ export const IntegrationsSection = () => {
       <Card className="bg-black/20 border-white/10 p-4 mb-6 flex items-start gap-3">
         <ShieldCheck size={20} className="text-ai-success flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-white">Local-only vault</p>
+          <p className="text-sm font-medium text-white">How access tokens are stored today</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            Access tokens for the integrations below are encrypted and decrypted on this device only. StackCendra's
-            servers never receive plaintext credentials, regardless of which edition you're on.
+            GitHub is real: the access token is encrypted (AES-256-GCM) before it's stored, and only decrypted
+            server-side when StackCendra needs to call the GitHub API on your behalf. This is an interim step for
+            the web-only phase, not the local-only vault described elsewhere in the product plan — that model
+            (credentials encrypted and decrypted only on your device) arrives with the desktop app. Every other
+            integration below is still mock UI.
           </p>
         </div>
       </Card>
@@ -104,6 +155,47 @@ export const IntegrationsSection = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {items.map((integration) => {
                   const Icon = integration.icon;
+
+                  if (integration.id === 'github') {
+                    const connected = !!githubStatus?.connected;
+                    return (
+                      <Card key="github" className="bg-black/20 border-white/10 p-4 flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                            <Icon size={16} className="text-gray-300" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-white truncate">{integration.name}</p>
+                              <Badge className={`text-[10px] px-1.5 ${tierClass[integration.tier]}`}>
+                                {tierLabel[integration.tier]}
+                              </Badge>
+                              <Badge className="text-[10px] px-1.5 bg-ai-primary/20 text-ai-primary">Real</Badge>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {connected ? `Connected as ${githubStatus?.login}` : integration.description}
+                            </p>
+                          </div>
+                        </div>
+                        {connected ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={githubBusy}
+                            onClick={disconnectGithub}
+                            className="border-white/20 text-white flex-shrink-0"
+                          >
+                            {githubBusy ? <Loader2 size={14} className="animate-spin" /> : 'Disconnect'}
+                          </Button>
+                        ) : (
+                          <Button asChild size="sm" className="bg-gradient-ai hover:opacity-90 flex-shrink-0">
+                            <a href="/api/integrations/github/connect">Connect</a>
+                          </Button>
+                        )}
+                      </Card>
+                    );
+                  }
+
                   const connected = connections[integration.id];
                   return (
                     <Card key={integration.id} className="bg-black/20 border-white/10 p-4 flex items-start justify-between gap-3">

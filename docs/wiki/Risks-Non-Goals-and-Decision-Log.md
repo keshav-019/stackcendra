@@ -101,6 +101,8 @@ Until explicitly promoted by a release decision, StackCendra will not:
 | D-017 | Persist users and linked OAuth accounts to Postgres via `@auth/pg-adapter`, while keeping the session itself a JWT (not a database session) | Accepted |
 | D-018 | Activate Google as a second real sign-in provider alongside GitHub | Accepted |
 | D-019 | Adopt Vitest (unit/component) and Playwright (E2E) as the web shell's test frameworks, with a synthetic-JWT-cookie strategy for testing authenticated routes without automating real OAuth | Accepted |
+| D-020 | Request GitHub repo access only when connecting a project (Settings or Add Project wizard), never bundled into sign-in | Accepted |
+| D-021 | Use a second, separate GitHub OAuth App for repo-scoped integration access, with its own encrypted server-side token storage, distinct from the sign-in app | Accepted |
 
 ## Open decisions
 

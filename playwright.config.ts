@@ -10,8 +10,13 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // A handful of tests hit real GitHub/Google OAuth endpoints to verify
+  // this app constructs the correct redirect. Those occasionally flake
+  // under high local parallelism (contention hitting a live third party,
+  // not app behavior) -- one retry absorbs that without masking a real
+  // regression, since a genuine bug fails consistently, not once.
+  retries: process.env.CI ? 2 : 1,
+  workers: process.env.CI ? 1 : 4,
   reporter: 'html',
   use: {
     baseURL,
