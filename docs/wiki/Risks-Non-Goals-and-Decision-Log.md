@@ -105,6 +105,8 @@ Until explicitly promoted by a release decision, StackCendra will not:
 | D-021 | Use a second, separate GitHub OAuth App for repo-scoped integration access, with its own encrypted server-side token storage, distinct from the sign-in app | Accepted |
 | D-022 | Fix the sign-in method to whichever provider (GitHub or Google) the user chose at signup; do not offer linking a second sign-in provider to the same account afterward | Accepted |
 | D-023 | Use the repo-scoped GitHub token (D-021) to show real CI/CD activity — GitHub Actions workflow run status and failed-step detail — in Settings → Integrations | Accepted |
+| D-024 | Use a single GitLab OAuth App for project-access integration (no sign-in split needed, unlike GitHub) — see [ADR 0012](https://github.com/keshav-019/stackcendra/wiki/ADR-0012-GitLab-Repo-Integration) | Accepted |
+| D-025 | Build GitLab access-token refresh (expiring ~2h tokens) into the integration from the start, rather than shipping a connection that silently breaks after 2 hours | Accepted |
 
 ## Open decisions
 

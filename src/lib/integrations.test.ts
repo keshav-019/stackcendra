@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fetchGithubWorkflowRuns, fetchGithubRunFailures, GITHUB_REPO_FULL_NAME_RE } from './integrations';
+import {
+  fetchGithubWorkflowRuns,
+  fetchGithubRunFailures,
+  GITHUB_REPO_FULL_NAME_RE,
+  fetchGitlabProjects,
+  fetchGitlabPipelines,
+  fetchGitlabPipelineFailures,
+  GITLAB_PROJECT_PATH_RE,
+} from './integrations';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -116,5 +124,162 @@ describe('GITHUB_REPO_FULL_NAME_RE', () => {
     expect(GITHUB_REPO_FULL_NAME_RE.test('octocat/hello/world')).toBe(false);
     expect(GITHUB_REPO_FULL_NAME_RE.test('no-slash-here')).toBe(false);
     expect(GITHUB_REPO_FULL_NAME_RE.test('octocat/hello world')).toBe(false);
+  });
+
+  it('rejects a dot-only segment even when the slash count matches (e.g. "../..")', () => {
+    expect(GITHUB_REPO_FULL_NAME_RE.test('../..')).toBe(false);
+  });
+});
+
+describe('fetchGitlabProjects', () => {
+  it('maps the GitLab API response into camelCase projects', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          path_with_namespace: 'acme-corp/analytics-dashboard',
+          visibility: 'private',
+          last_activity_at: '2026-07-30T10:00:00Z',
+          default_branch: 'main',
+        },
+        {
+          path_with_namespace: 'acme-corp/public-docs',
+          visibility: 'public',
+          last_activity_at: '2026-07-29T10:00:00Z',
+          default_branch: null,
+        },
+      ],
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const projects = await fetchGitlabProjects('token123');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gitlab.com/api/v4/projects?membership=true&order_by=updated_at&per_page=25',
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer token123' }) })
+    );
+    expect(projects).toEqual([
+      { fullName: 'acme-corp/analytics-dashboard', private: true, updatedAt: '2026-07-30T10:00:00Z', defaultBranch: 'main' },
+      { fullName: 'acme-corp/public-docs', private: false, updatedAt: '2026-07-29T10:00:00Z', defaultBranch: 'main' },
+    ]);
+  });
+
+  it('throws when the GitLab API responds with a non-OK status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 401 }));
+    await expect(fetchGitlabProjects('token123')).rejects.toThrow(/401/);
+  });
+});
+
+describe('fetchGitlabPipelines', () => {
+  it('maps GitLab pipeline statuses onto the shared {status, conclusion} shape', async () => {
+    const makePipeline = (overrides: Partial<Record<string, unknown>>) => ({
+      id: 1,
+      iid: 10,
+      status: 'success',
+      ref: 'main',
+      sha: 'abcdef1234567',
+      source: 'push',
+      user: { username: 'octocat' },
+      web_url: 'https://gitlab.com/acme-corp/demo/-/pipelines/1',
+      created_at: '2026-07-30T10:00:00Z',
+      updated_at: '2026-07-30T10:05:00Z',
+      ...overrides,
+    });
+
+    const cases: [string, { status: string; conclusion: string | null }][] = [
+      ['pending', { status: 'queued', conclusion: null }],
+      ['running', { status: 'in_progress', conclusion: null }],
+      ['success', { status: 'completed', conclusion: 'success' }],
+      ['failed', { status: 'completed', conclusion: 'failure' }],
+      ['canceled', { status: 'completed', conclusion: 'cancelled' }],
+      ['skipped', { status: 'completed', conclusion: 'skipped' }],
+    ];
+
+    for (const [gitlabStatus, expected] of cases) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => [makePipeline({ status: gitlabStatus })] }));
+      const runs = await fetchGitlabPipelines('token123', 'acme-corp/demo');
+      expect(runs[0].status).toBe(expected.status);
+      expect(runs[0].conclusion).toBe(expected.conclusion);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('maps the rest of the pipeline fields and URL-encodes the project path', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          id: 1,
+          iid: 10,
+          status: 'success',
+          ref: 'main',
+          sha: 'abcdef1234567',
+          source: 'push',
+          user: { username: 'octocat' },
+          web_url: 'https://gitlab.com/acme-corp/demo/-/pipelines/1',
+          created_at: '2026-07-30T10:00:00Z',
+          updated_at: '2026-07-30T10:05:00Z',
+        },
+      ],
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const runs = await fetchGitlabPipelines('token123', 'acme-corp/demo');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gitlab.com/api/v4/projects/acme-corp%2Fdemo/pipelines?per_page=15&order_by=updated_at',
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer token123' }) })
+    );
+    expect(runs).toEqual([
+      {
+        id: 1,
+        name: 'Pipeline #10',
+        displayTitle: 'main (push)',
+        status: 'completed',
+        conclusion: 'success',
+        headBranch: 'main',
+        headSha: 'abcdef1',
+        event: 'push',
+        actorLogin: 'octocat',
+        runNumber: 10,
+        htmlUrl: 'https://gitlab.com/acme-corp/demo/-/pipelines/1',
+        createdAt: '2026-07-30T10:00:00Z',
+        updatedAt: '2026-07-30T10:05:00Z',
+      },
+    ]);
+  });
+});
+
+describe('fetchGitlabPipelineFailures', () => {
+  it('returns only failed jobs, using the stage as the step name and failure_reason as the conclusion', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { name: 'build', stage: 'build', status: 'success' },
+        { name: 'test', stage: 'test', status: 'failed', failure_reason: 'script_failure' },
+      ],
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const failures = await fetchGitlabPipelineFailures('token123', 'acme-corp/demo', 1);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gitlab.com/api/v4/projects/acme-corp%2Fdemo/pipelines/1/jobs?per_page=100',
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer token123' }) })
+    );
+    expect(failures).toEqual([{ jobName: 'test', stepName: 'test', conclusion: 'script_failure' }]);
+  });
+});
+
+describe('GITLAB_PROJECT_PATH_RE', () => {
+  it('accepts single- and multi-level project paths (GitLab allows nested groups)', () => {
+    expect(GITLAB_PROJECT_PATH_RE.test('acme-corp/demo')).toBe(true);
+    expect(GITLAB_PROJECT_PATH_RE.test('acme-corp/platform/demo')).toBe(true);
+  });
+
+  it('rejects anything without at least one slash or with unsafe characters', () => {
+    expect(GITLAB_PROJECT_PATH_RE.test('../../etc/passwd')).toBe(false);
+    expect(GITLAB_PROJECT_PATH_RE.test('no-slash-here')).toBe(false);
+    expect(GITLAB_PROJECT_PATH_RE.test('acme-corp/demo project')).toBe(false);
   });
 });

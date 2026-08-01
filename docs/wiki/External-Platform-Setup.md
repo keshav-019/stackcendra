@@ -77,6 +77,24 @@ Needed for: real repo access — the "Connect" button on Settings → Integratio
    ```
 9. Apply `db/integrations-schema.sql` to the database if it hasn't been already (creates the `integration_connections` table).
 
+### 1d. GitLab OAuth App (integration)
+
+Needed for: real project access — the "Connect" button on Settings → Integrations' GitLab row, and the Add Project wizard's GitLab repository picker. Unlike GitHub, GitLab isn't a sign-in provider at all yet, so there's only one GitLab OAuth App, not a sign-in/integration split — and GitLab OAuth Apps support multiple redirect URIs in a single app, so there's no callback-URL constraint forcing a split even if that changed later.
+
+1. Go to **gitlab.com/-/user_settings/applications** (self-hosted GitLab: the equivalent page on your instance).
+2. Name: `StackCendra Integration (dev)`.
+3. Redirect URI: `http://localhost:8080/api/integrations/gitlab/callback` (add a production URI on a new line later if needed — no second app required).
+4. Scopes: check only `read_user` and `read_api` (read-only across the API, no write or repo-content access).
+5. Leave **Confidential** checked (default) — this is a server-side authorization-code exchange.
+6. Click **Save application**. Copy the **Application ID** and **Secret** (shown once).
+7. Store as:
+   ```
+   GITLAB_INTEGRATION_CLIENT_ID=
+   GITLAB_INTEGRATION_CLIENT_SECRET=
+   ```
+8. GitLab access tokens expire (~2 hours) and are refreshed automatically server-side using the refresh token GitLab issues alongside them — see [ADR 0012](https://github.com/keshav-019/stackcendra/wiki/ADR-0012-GitLab-Repo-Integration). This requires `db/integrations-refresh-schema.sql` to be applied in addition to `db/integrations-schema.sql` (adds `refresh_token_encrypted` and `expires_at` columns).
+9. Reuses the same `INTEGRATION_ENCRYPTION_KEY` set up for GitHub above — no separate key needed.
+
 ### 2. Vercel (web hosting)
 
 Needed for: hosting the Next.js dashboard publicly so it's not only running on your machine.
@@ -132,11 +150,6 @@ Chosen over Anthropic for this stage because Gemini has a genuinely ongoing free
 
 ## Later tiers: set up only when the phase begins
 
-### Phase 4 — GitLab (if you want GitLab alongside GitHub)
-
-1. gitlab.com → **User Settings → Applications** → create an application, same idea as the GitHub OAuth App above.
-2. Store as `GITLAB_OAUTH_CLIENT_ID` / `GITLAB_OAUTH_CLIENT_SECRET`.
-
 ### Phase 9 — Cloud providers
 
 **AWS** (build this one deep first, per the Roadmap):
@@ -186,6 +199,7 @@ Self-host first (LiveKit has a local dev server mode, no account needed) before 
 | Firebase | Evaluated, rejected — see [D-013](https://github.com/keshav-019/stackcendra/wiki/Risks-Non-Goals-and-Decision-Log) |
 | GitHub OAuth App (sign-in) | Created; wired into real sign-in via [ADR 0008](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth) |
 | GitHub OAuth App (integration) | Created; wired into a real repo-access connect flow via [ADR 0011](https://github.com/keshav-019/stackcendra/wiki/ADR-0011-GitHub-Repo-Integration) — Settings → Integrations and the Add Project wizard |
+| GitLab OAuth App (integration) | Created; wired into a real project-access connect flow via [ADR 0012](https://github.com/keshav-019/stackcendra/wiki/ADR-0012-GitLab-Repo-Integration) — Settings → Integrations and the Add Project wizard |
 | Google OAuth Client | Created and wired in; "Continue with Google" is live on `/login` and `/signup` |
 | Vercel | Not yet created |
 | Cloudflare | Account and R2 credentials created; not yet wired into any app code |

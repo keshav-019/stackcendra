@@ -8,8 +8,10 @@ test.describe('GitHub integration connect flow (authenticated)', () => {
 
   test('Settings shows the GitHub row as real, not mock, and not connected for a fresh user', async ({ page }) => {
     await page.goto('/settings');
-    await expect(page.getByText('Real', { exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Connect' })).toBeVisible();
+    // GitHub and GitLab are both real now, so "Real" and "Connect" each
+    // appear twice on the page -- scope to GitHub's own connect link.
+    await expect(page.getByText('Real', { exact: true })).toHaveCount(2);
+    await expect(page.locator('a[href="/api/integrations/github/connect"]')).toBeVisible();
   });
 
   test('the connect endpoint redirects to GitHub\'s real authorize endpoint with repo scope', async ({ page }) => {
