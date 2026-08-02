@@ -107,6 +107,10 @@ Until explicitly promoted by a release decision, StackCendra will not:
 | D-023 | Use the repo-scoped GitHub token (D-021) to show real CI/CD activity — GitHub Actions workflow run status and failed-step detail — in Settings → Integrations | Accepted |
 | D-024 | Use a single GitLab OAuth App for project-access integration (no sign-in split needed, unlike GitHub) — see [ADR 0012](https://github.com/keshav-019/stackcendra/wiki/ADR-0012-GitLab-Repo-Integration) | Accepted |
 | D-025 | Build GitLab access-token refresh (expiring ~2h tokens) into the integration from the start, rather than shipping a connection that silently breaks after 2 hours | Accepted |
+| D-026 | Switch the dashboard itself into a provider-scoped view via a URL mode param (`?mode=github`/`?mode=gitlab`), reachable from a new "Open ▸" submenu on the user icon | Accepted |
+| D-027 | Keep the repo/project picker inside each provider mode rather than making the mock "Projects" concept real in this pass | Accepted |
+| D-028 | Split Sprint issue data: the issue itself (title, body, open/closed) lives on the real provider; only local board metadata (column, story points) is stored in a new `sprint_items` table | Accepted |
+| D-029 | Wire only the one real My Tasks cross-tagging loop the user described (issue created in Sprint → tagged task in My Tasks → click back into mode), not a general cross-provider issue-sync system | Accepted |
 
 ## Open decisions
 

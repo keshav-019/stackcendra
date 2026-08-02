@@ -4,11 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Plus, ChevronDown, ChevronRight, GitBranch, Star } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, GitBranch, Star, Github, Gitlab } from 'lucide-react';
 
 type Group = 'Today' | 'This week' | 'Later' | 'Completed';
 
-interface Task {
+export interface TaskSource {
+  provider: 'github' | 'gitlab';
+  repoFullName: string;
+  issueNumber: number;
+  issueHtmlUrl: string;
+}
+
+export interface Task {
   id: number;
   title: string;
   notes: string;
@@ -16,9 +23,10 @@ interface Task {
   done: boolean;
   starred: boolean;
   tags: string[];
+  source?: TaskSource;
 }
 
-const initialTasks: Task[] = [
+export const initialTasks: Task[] = [
   {
     id: 1,
     title: 'Implement database connection pooling',
@@ -60,25 +68,30 @@ const initialTasks: Task[] = [
 
 const groupOrder: Group[] = ['Today', 'This week', 'Later', 'Completed'];
 
-export const MyTasks = () => {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+interface MyTasksProps {
+  tasks: Task[];
+  onTasksChange: (updater: (prev: Task[]) => Task[]) => void;
+  onOpenSource?: (source: TaskSource) => void;
+}
+
+export const MyTasks: React.FC<MyTasksProps> = ({ tasks, onTasksChange, onOpenSource }) => {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [newTask, setNewTask] = useState('');
   const [completedOpen, setCompletedOpen] = useState(false);
 
   const toggleDone = (id: number) => {
-    setTasks((prev) =>
+    onTasksChange((prev) =>
       prev.map((t) => (t.id === id ? { ...t, done: !t.done, group: !t.done ? 'Completed' : 'Today' } : t))
     );
   };
 
   const toggleStar = (id: number) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, starred: !t.starred } : t)));
+    onTasksChange((prev) => prev.map((t) => (t.id === id ? { ...t, starred: !t.starred } : t)));
   };
 
   const addTask = () => {
     if (!newTask.trim()) return;
-    setTasks((prev) => [
+    onTasksChange((prev) => [
       { id: Date.now(), title: newTask.trim(), notes: '', group: 'Today', done: false, starred: false, tags: [] },
       ...prev,
     ]);
@@ -125,7 +138,13 @@ export const MyTasks = () => {
                   {completedOpen && (
                     <div className="space-y-1">
                       {items.map((task) => (
-                        <TaskRow key={task.id} task={task} onToggleDone={toggleDone} onToggleStar={toggleStar} />
+                        <TaskRow
+                          key={task.id}
+                          task={task}
+                          onToggleDone={toggleDone}
+                          onToggleStar={toggleStar}
+                          onOpenSource={onOpenSource}
+                        />
                       ))}
                     </div>
                   )}
@@ -143,6 +162,7 @@ export const MyTasks = () => {
                       task={task}
                       onToggleDone={toggleDone}
                       onToggleStar={toggleStar}
+                      onOpenSource={onOpenSource}
                       expanded={expanded === task.id}
                       onToggleExpand={() => setExpanded(expanded === task.id ? null : task.id)}
                     />
@@ -183,11 +203,15 @@ interface TaskRowProps {
   task: Task;
   onToggleDone: (id: number) => void;
   onToggleStar: (id: number) => void;
+  onOpenSource?: (source: TaskSource) => void;
   expanded?: boolean;
   onToggleExpand?: () => void;
 }
 
-const TaskRow: React.FC<TaskRowProps> = ({ task, onToggleDone, onToggleStar, expanded, onToggleExpand }) => {
+const SOURCE_ICON: Record<TaskSource['provider'], React.ElementType> = { github: Github, gitlab: Gitlab };
+const SOURCE_LABEL: Record<TaskSource['provider'], string> = { github: 'GitHub', gitlab: 'GitLab' };
+
+const TaskRow: React.FC<TaskRowProps> = ({ task, onToggleDone, onToggleStar, onOpenSource, expanded, onToggleExpand }) => {
   return (
     <div className="rounded-lg hover:bg-white/5 transition-colors">
       <div className="flex items-center gap-3 px-2 py-2">
@@ -209,6 +233,22 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggleDone, onToggleStar, exp
         >
           {task.title}
         </button>
+
+        {task.source &&
+          (() => {
+            const SourceIcon = SOURCE_ICON[task.source.provider];
+            return (
+              <button
+                type="button"
+                onClick={() => onOpenSource?.(task.source!)}
+                title={`Open in ${SOURCE_LABEL[task.source.provider]} mode`}
+                className="hidden sm:flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded bg-ai-primary/20 text-ai-primary text-[10px] hover:bg-ai-primary/30 transition-colors"
+              >
+                <SourceIcon size={10} />
+                {SOURCE_LABEL[task.source.provider]}
+              </button>
+            );
+          })()}
 
         {task.tags.length > 0 && (
           <div className="hidden sm:flex gap-1 flex-shrink-0">

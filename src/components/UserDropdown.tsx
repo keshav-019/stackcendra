@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, Settings, MessageCircle, Crown, LogOut, Shield } from 'lucide-react';
+import { User, Settings, MessageCircle, Crown, LogOut, Shield, FolderOpen, Layers, Github, Gitlab } from 'lucide-react';
 
 interface UserDropdownProps {
   isManagerMode: boolean;
@@ -21,9 +25,27 @@ interface UserDropdownProps {
   onOpenAI: () => void;
 }
 
+const OPEN_PROVIDERS: { id: 'github' | 'gitlab'; label: string; icon: React.ElementType }[] = [
+  { id: 'github', label: 'GitHub', icon: Github },
+  { id: 'gitlab', label: 'GitLab', icon: Gitlab },
+];
+
 export const UserDropdown = ({ isManagerMode, onToggleManagerMode, onOpenAI }: UserDropdownProps) => {
   const router = useRouter();
   const { data: session } = useSession();
+  const [connected, setConnected] = useState<Record<'github' | 'gitlab', boolean>>({ github: false, gitlab: false });
+
+  useEffect(() => {
+    if (!session) return;
+    OPEN_PROVIDERS.forEach((p) => {
+      fetch(`/api/integrations/${p.id}/status`)
+        .then((res) => (res.ok ? res.json() : { connected: false }))
+        .then((data) => setConnected((prev) => ({ ...prev, [p.id]: !!data.connected })))
+        .catch(() => {});
+    });
+  }, [session]);
+
+  const connectedProviders = OPEN_PROVIDERS.filter((p) => connected[p.id]);
 
   const displayName = session?.user?.name ?? 'John Doe';
   const displayEmail = session?.user?.email ?? 'john.doe@company.com';
@@ -83,16 +105,52 @@ export const UserDropdown = ({ isManagerMode, onToggleManagerMode, onOpenAI }: U
           Talk to AI
         </DropdownMenuItem>
         
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={() => onToggleManagerMode(!isManagerMode)}
           className="text-white hover:bg-white/10 cursor-pointer"
         >
           <Shield className="mr-2 h-4 w-4" />
           {isManagerMode ? 'Exit Manager Mode' : 'Switch to Manager Mode'}
         </DropdownMenuItem>
-        
+
         <DropdownMenuSeparator className="bg-white/10" />
-        
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="text-white hover:bg-white/10 data-[state=open]:bg-white/10 cursor-pointer">
+            <FolderOpen className="mr-2 h-4 w-4" />
+            Open
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent className="bg-black/90 border-white/10">
+              <DropdownMenuItem onClick={() => router.push('/')} className="text-white hover:bg-white/10 cursor-pointer">
+                <Layers className="mr-2 h-4 w-4" />
+                Unified (local)
+              </DropdownMenuItem>
+              {connectedProviders.length > 0 && <DropdownMenuSeparator className="bg-white/10" />}
+              {connectedProviders.map((p) => {
+                const Icon = p.icon;
+                return (
+                  <DropdownMenuItem
+                    key={p.id}
+                    onClick={() => router.push(`/?mode=${p.id}`)}
+                    className="text-white hover:bg-white/10 cursor-pointer"
+                  >
+                    <Icon className="mr-2 h-4 w-4" />
+                    {p.label}
+                  </DropdownMenuItem>
+                );
+              })}
+              {connectedProviders.length === 0 && (
+                <p className="px-2 py-1.5 text-xs text-gray-500 max-w-[14rem]">
+                  Connect GitHub or GitLab in Settings to open them here.
+                </p>
+              )}
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
+
+        <DropdownMenuSeparator className="bg-white/10" />
+
         <DropdownMenuItem
           onClick={() => router.push('/profile')}
           className="text-white hover:bg-white/10 cursor-pointer"

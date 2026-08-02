@@ -262,6 +262,144 @@ export async function getGithubRunFailures(userId: string, repoFullName: string,
   return fetchGithubRunFailures(accessToken, repoFullName, runId);
 }
 
+export interface GithubBranch {
+  name: string;
+  sha: string;
+  protected: boolean;
+}
+
+export interface GithubCommit {
+  sha: string;
+  message: string;
+  authorLogin: string | null;
+  authorName: string;
+  date: string;
+  htmlUrl: string;
+}
+
+export interface GithubPullRequest {
+  number: number;
+  title: string;
+  authorLogin: string | null;
+  htmlUrl: string;
+  headRef: string;
+  baseRef: string;
+  createdAt: string;
+}
+
+export interface GithubRepoOverview {
+  branches: GithubBranch[];
+  commits: GithubCommit[];
+  pullRequests: GithubPullRequest[];
+}
+
+export async function fetchGithubRepoOverview(accessToken: string, repoFullName: string): Promise<GithubRepoOverview> {
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'stackcendra',
+  };
+  const [branchesRes, commitsRes, pullsRes] = await Promise.all([
+    fetch(`https://api.github.com/repos/${repoFullName}/branches?per_page=20`, { headers }),
+    fetch(`https://api.github.com/repos/${repoFullName}/commits?per_page=10`, { headers }),
+    fetch(`https://api.github.com/repos/${repoFullName}/pulls?state=open&per_page=10`, { headers }),
+  ]);
+  if (!branchesRes.ok) throw new Error(`GitHub /branches failed: ${branchesRes.status}`);
+  if (!commitsRes.ok) throw new Error(`GitHub /commits failed: ${commitsRes.status}`);
+  if (!pullsRes.ok) throw new Error(`GitHub /pulls failed: ${pullsRes.status}`);
+
+  const branchesData = await branchesRes.json();
+  const commitsData = await commitsRes.json();
+  const pullsData = await pullsRes.json();
+
+  return {
+    branches: branchesData.map((b: { name: string; commit: { sha: string }; protected: boolean }) => ({
+      name: b.name,
+      sha: b.commit.sha,
+      protected: b.protected,
+    })),
+    commits: commitsData.map(
+      (c: {
+        sha: string;
+        commit: { message: string; author: { name: string; date: string } };
+        author: { login: string } | null;
+        html_url: string;
+      }) => ({
+        sha: c.sha,
+        message: c.commit.message,
+        authorLogin: c.author?.login ?? null,
+        authorName: c.commit.author.name,
+        date: c.commit.author.date,
+        htmlUrl: c.html_url,
+      })
+    ),
+    pullRequests: pullsData.map(
+      (p: {
+        number: number;
+        title: string;
+        user: { login: string } | null;
+        html_url: string;
+        head: { ref: string };
+        base: { ref: string };
+        created_at: string;
+      }) => ({
+        number: p.number,
+        title: p.title,
+        authorLogin: p.user?.login ?? null,
+        htmlUrl: p.html_url,
+        headRef: p.head.ref,
+        baseRef: p.base.ref,
+        createdAt: p.created_at,
+      })
+    ),
+  };
+}
+
+export async function getGithubRepoOverview(userId: string, repoFullName: string): Promise<GithubRepoOverview> {
+  if (!GITHUB_REPO_FULL_NAME_RE.test(repoFullName)) throw new Error('Invalid repository name');
+  const accessToken = await getAccessToken(userId, 'github');
+  if (!accessToken) throw new Error('GitHub is not connected for this user');
+  return fetchGithubRepoOverview(accessToken, repoFullName);
+}
+
+export interface GithubIssue {
+  number: number;
+  title: string;
+  htmlUrl: string;
+}
+
+export async function fetchCreateGithubIssue(
+  accessToken: string,
+  repoFullName: string,
+  params: { title: string; body?: string }
+): Promise<GithubIssue> {
+  const res = await fetch(`https://api.github.com/repos/${repoFullName}/issues`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'stackcendra',
+    },
+    body: JSON.stringify({ title: params.title, body: params.body }),
+  });
+  if (!res.ok) throw new Error(`GitHub create issue failed: ${res.status}`);
+  const data = await res.json();
+  return { number: data.number, title: data.title, htmlUrl: data.html_url };
+}
+
+export async function createGithubIssue(
+  userId: string,
+  repoFullName: string,
+  params: { title: string; body?: string }
+): Promise<GithubIssue> {
+  if (!GITHUB_REPO_FULL_NAME_RE.test(repoFullName)) throw new Error('Invalid repository name');
+  if (!params.title.trim()) throw new Error('Issue title is required');
+  const accessToken = await getAccessToken(userId, 'github');
+  if (!accessToken) throw new Error('GitHub is not connected for this user');
+  return fetchCreateGithubIssue(accessToken, repoFullName, params);
+}
+
 // -- GitLab -----------------------------------------------------------
 //
 // GitLab projects can be nested under groups/subgroups (group/sub/project),
@@ -441,4 +579,136 @@ export async function getGitlabPipelineFailures(
   const accessToken = await getAccessToken(userId, 'gitlab');
   if (!accessToken) throw new Error('GitLab is not connected for this user');
   return fetchGitlabPipelineFailures(accessToken, projectPath, pipelineId);
+}
+
+export interface GitlabBranch {
+  name: string;
+  sha: string;
+  protected: boolean;
+}
+
+export interface GitlabCommit {
+  sha: string;
+  message: string;
+  authorName: string;
+  date: string;
+  htmlUrl: string;
+}
+
+export interface GitlabMergeRequest {
+  iid: number;
+  title: string;
+  authorLogin: string | null;
+  htmlUrl: string;
+  sourceBranch: string;
+  targetBranch: string;
+  createdAt: string;
+}
+
+export interface GitlabRepoOverview {
+  branches: GitlabBranch[];
+  commits: GitlabCommit[];
+  mergeRequests: GitlabMergeRequest[];
+}
+
+export async function fetchGitlabRepoOverview(accessToken: string, projectPath: string): Promise<GitlabRepoOverview> {
+  const headers = { Authorization: `Bearer ${accessToken}` };
+  const id = encodeURIComponent(projectPath);
+  const [branchesRes, commitsRes, mrsRes] = await Promise.all([
+    fetch(`https://gitlab.com/api/v4/projects/${id}/repository/branches?per_page=20`, { headers }),
+    fetch(`https://gitlab.com/api/v4/projects/${id}/repository/commits?per_page=10`, { headers }),
+    fetch(`https://gitlab.com/api/v4/projects/${id}/merge_requests?state=opened&per_page=10`, { headers }),
+  ]);
+  if (!branchesRes.ok) throw new Error(`GitLab branches failed: ${branchesRes.status}`);
+  if (!commitsRes.ok) throw new Error(`GitLab commits failed: ${commitsRes.status}`);
+  if (!mrsRes.ok) throw new Error(`GitLab merge_requests failed: ${mrsRes.status}`);
+
+  const branchesData = await branchesRes.json();
+  const commitsData = await commitsRes.json();
+  const mrsData = await mrsRes.json();
+
+  return {
+    branches: branchesData.map((b: { name: string; commit: { id: string }; protected: boolean }) => ({
+      name: b.name,
+      sha: b.commit.id,
+      protected: b.protected,
+    })),
+    commits: commitsData.map(
+      (c: { id: string; title: string; author_name: string; authored_date: string; web_url: string }) => ({
+        sha: c.id,
+        message: c.title,
+        authorName: c.author_name,
+        date: c.authored_date,
+        htmlUrl: c.web_url,
+      })
+    ),
+    mergeRequests: mrsData.map(
+      (m: {
+        iid: number;
+        title: string;
+        author: { username: string } | null;
+        web_url: string;
+        source_branch: string;
+        target_branch: string;
+        created_at: string;
+      }) => ({
+        iid: m.iid,
+        title: m.title,
+        authorLogin: m.author?.username ?? null,
+        htmlUrl: m.web_url,
+        sourceBranch: m.source_branch,
+        targetBranch: m.target_branch,
+        createdAt: m.created_at,
+      })
+    ),
+  };
+}
+
+export async function getGitlabRepoOverview(userId: string, projectPath: string): Promise<GitlabRepoOverview> {
+  if (!GITLAB_PROJECT_PATH_RE.test(projectPath)) throw new Error('Invalid project path');
+  const accessToken = await getAccessToken(userId, 'gitlab');
+  if (!accessToken) throw new Error('GitLab is not connected for this user');
+  return fetchGitlabRepoOverview(accessToken, projectPath);
+}
+
+export interface GitlabIssue {
+  iid: number;
+  title: string;
+  state: string;
+  htmlUrl: string;
+  authorLogin: string | null;
+  createdAt: string;
+}
+
+export async function fetchGitlabIssues(accessToken: string, projectPath: string): Promise<GitlabIssue[]> {
+  const res = await fetch(
+    `https://gitlab.com/api/v4/projects/${encodeURIComponent(projectPath)}/issues?per_page=30&order_by=updated_at`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  if (!res.ok) throw new Error(`GitLab issues failed: ${res.status}`);
+  const data = await res.json();
+  return data.map(
+    (i: {
+      iid: number;
+      title: string;
+      state: string;
+      web_url: string;
+      author: { username: string } | null;
+      created_at: string;
+    }) => ({
+      iid: i.iid,
+      title: i.title,
+      state: i.state,
+      htmlUrl: i.web_url,
+      authorLogin: i.author?.username ?? null,
+      createdAt: i.created_at,
+    })
+  );
+}
+
+export async function getGitlabIssues(userId: string, projectPath: string): Promise<GitlabIssue[]> {
+  if (!GITLAB_PROJECT_PATH_RE.test(projectPath)) throw new Error('Invalid project path');
+  const accessToken = await getAccessToken(userId, 'gitlab');
+  if (!accessToken) throw new Error('GitLab is not connected for this user');
+  return fetchGitlabIssues(accessToken, projectPath);
 }
