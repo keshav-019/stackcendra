@@ -6,14 +6,16 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Monitor, Settings, Play, GitBranch, Calendar } from 'lucide-react';
+import { Users, Monitor, Settings, Play, GitBranch, Calendar, PhoneCall } from 'lucide-react';
 
 interface VideoCallInterfaceProps {
   isManagerMode: boolean;
 }
 
 export const VideoCallInterface = ({ isManagerMode }: VideoCallInterfaceProps) => {
+  const [isCallActive, setIsCallActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
@@ -217,6 +219,24 @@ const pool = new Pool({
 
   return (
     <div className="space-y-6">
+      {/* Call state control (concept-only, simulates a live call for this demo) */}
+      <Card className="bg-black/20 border-white/10 p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isCallActive ? 'bg-red-500/20' : 'bg-white/10'}`}>
+            <PhoneCall size={16} className={isCallActive ? 'text-red-400' : 'text-gray-400'} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-white">
+              {isCallActive ? 'Team Debug Session is live' : 'No call in progress'}
+            </p>
+            <p className="text-xs text-gray-400">
+              {isCallActive ? 'Toggle off to end the simulated call' : 'Toggle on to simulate an ongoing call'}
+            </p>
+          </div>
+        </div>
+        <Switch checked={isCallActive} onCheckedChange={setIsCallActive} />
+      </Card>
+
       {/* Manager Meeting Controls */}
       {isManagerMode && (
         <Card className="bg-yellow-500/10 border-yellow-500/20 p-4">
@@ -268,6 +288,29 @@ const pool = new Pool({
       )}
 
       {/* Video Call Interface - Full Width */}
+      {!isCallActive && (
+        <Card className="bg-black/20 border-white/10 p-10 flex flex-col items-center text-center">
+          <div className="flex -space-x-2 mb-4">
+            {participants.map((participant, index) => (
+              <Avatar key={index} className="w-10 h-10 border-2 border-slate-900">
+                <AvatarFallback className="bg-gradient-ai text-white text-xs">
+                  {participant.avatar}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-1">Start a call with your team</h3>
+          <p className="text-sm text-gray-400 mb-5 max-w-sm">
+            No one is on a call right now. Start an instant debug session or join from a scheduled call below.
+          </p>
+          <Button onClick={() => setIsCallActive(true)} className="bg-gradient-ai hover:opacity-90">
+            <PhoneCall size={16} className="mr-2" />
+            Start Instant Call
+          </Button>
+        </Card>
+      )}
+
+      {isCallActive && (
       <Card className="bg-gradient-video/10 border-purple-500/20 p-4">
         {/* Video Grid */}
         <div className="col-span-2 space-y-4">
@@ -373,6 +416,7 @@ const pool = new Pool({
               <Button
                 variant="destructive"
                 size="lg"
+                onClick={() => setIsCallActive(false)}
                 className="px-6 rounded-full"
               >
                 End Call
@@ -404,6 +448,7 @@ const pool = new Pool({
           </Card>
         </div>
       </Card>
+      )}
 
       {/* Scheduled Calls Section */}
       <Card className="bg-black/20 border-white/10 p-4">

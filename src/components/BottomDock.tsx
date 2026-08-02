@@ -1,5 +1,6 @@
 
 import React from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +22,7 @@ export const BottomDock = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-black/40 backdrop-blur-md border-t border-white/10 p-3">
+    <div className="fixed bottom-0 left-0 right-0 h-[4.5rem] bg-black/40 backdrop-blur-md border-t border-white/10 p-3 z-40">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-5 gap-4 items-center">
           {/* Quick Stats */}
@@ -43,10 +44,10 @@ export const BottomDock = () => {
 
           {/* AI Quick Actions */}
           <div className="col-span-2">
-            <div className="flex items-center space-x-2 overflow-x-auto">
+            <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
               <span className="text-sm text-gray-400 whitespace-nowrap">AI Suggests:</span>
               {aiSuggestions.map((suggestion, index) => (
-                <Button key={index} size="sm" variant="outline" className="text-xs whitespace-nowrap">
+                <Button key={index} size="sm" variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
                   {suggestion}
                 </Button>
               ))}
@@ -59,9 +60,11 @@ export const BottomDock = () => {
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
               <span className="text-sm text-gray-400">All Systems Operational</span>
             </div>
-            <Button size="sm" variant="ghost" className="text-gray-400">
-              <Settings size={16} />
-            </Button>
+            <Link href="/settings">
+              <Button size="sm" variant="ghost" className="text-gray-400">
+                <Settings size={16} />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

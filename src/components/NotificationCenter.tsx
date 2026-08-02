@@ -60,7 +60,7 @@ export const NotificationCenter = () => {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 bg-black/90 border-white/10" align="end">
+      <PopoverContent className="w-96 bg-black/90 border-white/10 p-4" align="end">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold text-white">Notifications</h4>
@@ -68,9 +68,9 @@ export const NotificationCenter = () => {
               Mark all read
             </Button>
           </div>
-          
-          <ScrollArea className="h-64">
-            <div className="space-y-2">
+
+          <ScrollArea className="h-64 -mr-3">
+            <div className="space-y-2 pr-3">
               {notifications.map((notification) => (
                 <Card key={notification.id} className={`p-3 cursor-pointer transition-colors ${
                   !notification.read ? 'bg-white/10 border-white/20' : 'bg-white/5 border-white/10'

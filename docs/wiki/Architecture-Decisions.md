@@ -10,6 +10,13 @@ Architecture decision records preserve why the project chose a direction and wha
 - [ADR 0004 — Begin with modular services and PostgreSQL relationships](https://github.com/keshav-019/stackcendra/wiki/ADR-0004-Modular-Architecture-and-PostgreSQL)
 - [ADR 0005 — Separate AI from authorization and execution](https://github.com/keshav-019/stackcendra/wiki/ADR-0005-AI-Authorization-Boundary)
 - [ADR 0006 — Version Wiki source in the main repository](https://github.com/keshav-019/stackcendra/wiki/ADR-0006-Versioned-Wiki-Source)
+- [ADR 0007 — Ship Individual and Enterprise editions on one desktop-first core](https://github.com/keshav-019/stackcendra/wiki/ADR-0007-Two-Edition-Product-Model)
+- [ADR 0008 — Use Auth.js with GitHub OAuth for initial web sign-in](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth)
+- [ADR 0009 — Gate the dashboard and all authenticated routes behind a real session](https://github.com/keshav-019/stackcendra/wiki/ADR-0009-Route-Gating)
+- [ADR 0010 — Persist users and OAuth accounts to Postgres via the official Auth.js adapter](https://github.com/keshav-019/stackcendra/wiki/ADR-0010-Postgres-User-Persistence)
+- [ADR 0011 — Separate GitHub OAuth App for repo-scoped integration access](https://github.com/keshav-019/stackcendra/wiki/ADR-0011-GitHub-Repo-Integration)
+- [ADR 0012 — GitLab repo integration: single OAuth App, refreshable tokens, shared CI/CD panel](https://github.com/keshav-019/stackcendra/wiki/ADR-0012-GitLab-Repo-Integration)
+- [ADR 0013 — Provider mode switching: a real GitHub/GitLab-scoped dashboard view](https://github.com/keshav-019/stackcendra/wiki/ADR-0013-Provider-Mode-Switching)
 
 ## Record format
 

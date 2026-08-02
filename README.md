@@ -10,7 +10,7 @@ StackCendra is an AI-native engineering workspace designed to understand source 
 
 StackCendra is in **Phase 0: Foundation and product architecture**.
 
-The current application is a visual prototype. It demonstrates possible interface concepts, but it is not yet connected to a backend, desktop agent, container runtime, cloud account, or AI investigation service. Phase 0 establishes the product contract and engineering foundation before those systems are implemented.
+The current application is a visual prototype running on a lightweight Next.js App Router shell. It demonstrates possible interface concepts — including the dashboard and concept `/login` and `/signup` screens — but it is not yet connected to a backend, desktop agent, container runtime, cloud account, or AI investigation service. Phase 0 establishes the product contract and engineering foundation before those systems are implemented. See [Concept UI Screens](docs/wiki/Concept-UI-Screens.md) for the running screen inventory.
 
 ## Documentation
 

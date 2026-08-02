@@ -94,12 +94,29 @@ Until explicitly promoted by a release decision, StackCendra will not:
 | D-010 | Keep versioned Wiki source in the main repository | Accepted |
 | D-011 | Defer sprint, task, and video features from primary navigation | Accepted |
 | D-012 | Require deterministic discovery without an AI provider | Accepted |
+| D-013 | Do not adopt Firebase as the identity provider; keep auth provider selection open per P0-009 | Accepted |
+| D-014 | Start the bring-your-own-key AI provider with Google Gemini over Anthropic, for its ongoing no-card free tier | Accepted |
+| D-015 | Wire real GitHub OAuth sign-in via Auth.js (JWT session, no database adapter) for `/login` and `/signup` | Superseded by D-016/D-017 |
+| D-016 | Gate every route except `/login` and `/signup` behind a real session, redirecting unauthenticated visitors to `/login` | Accepted |
+| D-017 | Persist users and linked OAuth accounts to Postgres via `@auth/pg-adapter`, while keeping the session itself a JWT (not a database session) | Accepted |
+| D-018 | Activate Google as a second real sign-in provider alongside GitHub | Accepted |
+| D-019 | Adopt Vitest (unit/component) and Playwright (E2E) as the web shell's test frameworks, with a synthetic-JWT-cookie strategy for testing authenticated routes without automating real OAuth | Accepted |
+| D-020 | Request GitHub repo access only when connecting a project (Settings or Add Project wizard), never bundled into sign-in | Accepted |
+| D-021 | Use a second, separate GitHub OAuth App for repo-scoped integration access, with its own encrypted server-side token storage, distinct from the sign-in app | Accepted |
+| D-022 | Fix the sign-in method to whichever provider (GitHub or Google) the user chose at signup; do not offer linking a second sign-in provider to the same account afterward | Accepted |
+| D-023 | Use the repo-scoped GitHub token (D-021) to show real CI/CD activity — GitHub Actions workflow run status and failed-step detail — in Settings → Integrations | Accepted |
+| D-024 | Use a single GitLab OAuth App for project-access integration (no sign-in split needed, unlike GitHub) — see [ADR 0012](https://github.com/keshav-019/stackcendra/wiki/ADR-0012-GitLab-Repo-Integration) | Accepted |
+| D-025 | Build GitLab access-token refresh (expiring ~2h tokens) into the integration from the start, rather than shipping a connection that silently breaks after 2 hours | Accepted |
+| D-026 | Switch the dashboard itself into a provider-scoped view via a URL mode param (`?mode=github`/`?mode=gitlab`), reachable from a new "Open ▸" submenu on the user icon | Accepted |
+| D-027 | Keep the repo/project picker inside each provider mode rather than making the mock "Projects" concept real in this pass | Accepted |
+| D-028 | Split Sprint issue data: the issue itself (title, body, open/closed) lives on the real provider; only local board metadata (column, story points) is stored in a new `sprint_items` table | Accepted |
+| D-029 | Wire only the one real My Tasks cross-tagging loop the user described (issue created in Sprint → tagged task in My Tasks → click back into mode), not a general cross-provider issue-sync system | Accepted |
 
 ## Open decisions
 
 These questions must be resolved before their dependent work begins:
 
-- authentication provider and self-hosting strategy;
+- final authentication provider and self-hosting strategy for production/Enterprise SSO and the desktop app (Firebase was evaluated and explicitly rejected — see D-013 — and GitHub OAuth via Auth.js is now wired for initial web sign-in per D-015/[ADR 0008](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth), but that is a starting point, not the final P0-009 identity skeleton);
 - exact monorepo task orchestrator, if pnpm scripts are insufficient;
 - local Rust IPC boundary between the Tauri process and a separate agent;
 - database migration tool;
