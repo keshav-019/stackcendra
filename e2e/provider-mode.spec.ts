@@ -93,9 +93,42 @@ test.describe('Sprint issue endpoints (authenticated)', () => {
     expect(res.status()).toBe(404);
   });
 
+  test('PATCH /api/integrations/github/issues/:id with closeIssue also returns 404 for a nonexistent id', async ({ page }) => {
+    const res = await page.request.patch('/api/integrations/github/issues/00000000-0000-4000-8000-000000000099', {
+      data: { closeIssue: true, comment: 'Closing.' },
+    });
+    expect(res.status()).toBe(404);
+  });
+
   test('GET /api/integrations/gitlab/issues requires a project query parameter', async ({ page }) => {
     const res = await page.request.get('/api/integrations/gitlab/issues');
     expect(res.status()).toBe(400);
+  });
+
+  test('POST /api/integrations/gitlab/issues requires project and title', async ({ page }) => {
+    const res = await page.request.post('/api/integrations/gitlab/issues', { data: { project: 'acme-corp/demo' } });
+    expect(res.status()).toBe(400);
+  });
+
+  test('POST /api/integrations/gitlab/issues fails cleanly when GitLab is not connected for this user', async ({ page }) => {
+    const res = await page.request.post('/api/integrations/gitlab/issues', {
+      data: { project: 'acme-corp/demo', title: 'Test issue' },
+    });
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/not connected/i);
+  });
+
+  test('PATCH /api/integrations/gitlab/issues/:id rejects a malformed id', async ({ page }) => {
+    const res = await page.request.patch('/api/integrations/gitlab/issues/not-a-uuid', { data: { columnStatus: 'done' } });
+    expect(res.status()).toBe(400);
+  });
+
+  test('PATCH /api/integrations/gitlab/issues/:id returns 404 for a well-formed but nonexistent id', async ({ page }) => {
+    const res = await page.request.patch('/api/integrations/gitlab/issues/00000000-0000-4000-8000-000000000099', {
+      data: { columnStatus: 'done' },
+    });
+    expect(res.status()).toBe(404);
   });
 
   test('all sprint/issue endpoints redirect unauthenticated requests away from returning data', async ({ page }) => {
@@ -110,8 +143,16 @@ test.describe('Sprint issue endpoints (authenticated)', () => {
       data: { columnStatus: 'done' },
     });
     expect(patchRes.status()).toBe(401);
-    const gitlabRes = await freshContext.request.get('/api/integrations/gitlab/issues?project=acme-corp/demo');
-    expect(gitlabRes.status()).toBe(401);
+    const gitlabGetRes = await freshContext.request.get('/api/integrations/gitlab/issues?project=acme-corp/demo');
+    expect(gitlabGetRes.status()).toBe(401);
+    const gitlabPostRes = await freshContext.request.post('/api/integrations/gitlab/issues', {
+      data: { project: 'acme-corp/demo', title: 'x' },
+    });
+    expect(gitlabPostRes.status()).toBe(401);
+    const gitlabPatchRes = await freshContext.request.patch('/api/integrations/gitlab/issues/00000000-0000-4000-8000-000000000099', {
+      data: { columnStatus: 'done' },
+    });
+    expect(gitlabPatchRes.status()).toBe(401);
     await freshContext.close();
   });
 });

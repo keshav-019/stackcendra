@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { updateSprintItemColumn, getSprintItem, markSprintItemClosed } from '@/lib/sprint';
-import { closeGithubIssue } from '@/lib/integrations';
+import { closeGitlabIssue } from '@/lib/integrations';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -26,7 +26,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         return NextResponse.json({ error: 'Sprint item not found' }, { status: 404 });
       }
       const comment = typeof body?.comment === 'string' ? body.comment : undefined;
-      await closeGithubIssue(session.user.id, existing.repoFullName, existing.issueNumber, comment);
+      await closeGitlabIssue(session.user.id, existing.repoFullName, existing.issueNumber, comment);
       const item = await markSprintItemClosed(session.user.id, id);
       return NextResponse.json({ item });
     }

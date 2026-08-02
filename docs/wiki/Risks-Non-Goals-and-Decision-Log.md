@@ -111,6 +111,10 @@ Until explicitly promoted by a release decision, StackCendra will not:
 | D-027 | Keep the repo/project picker inside each provider mode rather than making the mock "Projects" concept real in this pass | Accepted |
 | D-028 | Split Sprint issue data: the issue itself (title, body, open/closed) lives on the real provider; only local board metadata (column, story points) is stored in a new `sprint_items` table | Accepted |
 | D-029 | Wire only the one real My Tasks cross-tagging loop the user described (issue created in Sprint → tagged task in My Tasks → click back into mode), not a general cross-provider issue-sync system | Accepted |
+| D-030 | Add real GitHub issue close + optional comment as a StackCendra-driven action, distinct from the existing local-only column move | Accepted |
+| D-031 | Expand the GitLab Integration OAuth App's scope from `read_api` to `api` (read-write) to support real GitLab issue creation and closing, superseding the GitHub-only-writes limit noted in ADR-0013 | Accepted, supersedes the GitLab-read-only-this-phase note in ADR-0013 |
+| D-032 | Unify `ProviderSprintBoard` into one config-driven writable component for both providers instead of a separate read-only GitLab variant, now that GitLab has write access | Accepted |
+| D-033 | Credential-bearing actions the agent cannot safely automate (e.g. a blocked clipboard-sourced git push) are handed to the user to run themselves, not re-attempted through a different tool to route around the block | Accepted |
 
 ## Open decisions
 
