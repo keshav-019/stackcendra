@@ -11,6 +11,11 @@ import {
   fetchGitlabRepoOverview,
   fetchCreateGithubIssue,
   fetchGitlabIssues,
+  fetchAddGithubIssueComment,
+  fetchCloseGithubIssue,
+  fetchCreateGitlabIssue,
+  fetchAddGitlabIssueComment,
+  fetchCloseGitlabIssue,
 } from './integrations';
 
 afterEach(() => {
@@ -479,6 +484,115 @@ describe('fetchGitlabIssues', () => {
         createdAt: '2026-07-30T10:00:00Z',
       },
     ]);
+  });
+});
+
+describe('fetchAddGithubIssueComment', () => {
+  it('posts the comment body to the issue comments endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchAddGithubIssueComment('token123', 'octocat/hello-world', 2, 'Closing this out.');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.github.com/repos/octocat/hello-world/issues/2/comments',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ body: 'Closing this out.' }),
+      })
+    );
+  });
+
+  it('throws when GitHub responds with a non-OK status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+    await expect(fetchAddGithubIssueComment('token123', 'octocat/hello-world', 2, 'x')).rejects.toThrow(/404/);
+  });
+});
+
+describe('fetchCloseGithubIssue', () => {
+  it('PATCHes the issue with state closed', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchCloseGithubIssue('token123', 'octocat/hello-world', 2);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.github.com/repos/octocat/hello-world/issues/2',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ state: 'closed' }),
+      })
+    );
+  });
+
+  it('throws when GitHub responds with a non-OK status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+    await expect(fetchCloseGithubIssue('token123', 'octocat/hello-world', 2)).rejects.toThrow(/404/);
+  });
+});
+
+describe('fetchCreateGitlabIssue', () => {
+  it('posts to the project issues endpoint and maps the response', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ iid: 4, title: 'Bug', web_url: 'https://gitlab.com/acme-corp/demo/-/issues/4' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const issue = await fetchCreateGitlabIssue('token123', 'acme-corp/demo', { title: 'Bug', description: 'Details' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gitlab.com/api/v4/projects/acme-corp%2Fdemo/issues',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ title: 'Bug', description: 'Details' }),
+      })
+    );
+    expect(issue).toEqual({ iid: 4, title: 'Bug', htmlUrl: 'https://gitlab.com/acme-corp/demo/-/issues/4' });
+  });
+
+  it('throws when GitLab responds with a non-OK status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 403 }));
+    await expect(fetchCreateGitlabIssue('token123', 'acme-corp/demo', { title: 'x' })).rejects.toThrow(/403/);
+  });
+});
+
+describe('fetchAddGitlabIssueComment', () => {
+  it('posts the comment body to the issue notes endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchAddGitlabIssueComment('token123', 'acme-corp/demo', 4, 'Closing this out.');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gitlab.com/api/v4/projects/acme-corp%2Fdemo/issues/4/notes',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ body: 'Closing this out.' }),
+      })
+    );
+  });
+});
+
+describe('fetchCloseGitlabIssue', () => {
+  it('PUTs the issue with a close state event', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchCloseGitlabIssue('token123', 'acme-corp/demo', 4);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gitlab.com/api/v4/projects/acme-corp%2Fdemo/issues/4',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ state_event: 'close' }),
+      })
+    );
+  });
+
+  it('throws when GitLab responds with a non-OK status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+    await expect(fetchCloseGitlabIssue('token123', 'acme-corp/demo', 4)).rejects.toThrow(/404/);
   });
 });
 

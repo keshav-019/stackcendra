@@ -400,6 +400,54 @@ export async function createGithubIssue(
   return fetchCreateGithubIssue(accessToken, repoFullName, params);
 }
 
+export async function fetchAddGithubIssueComment(
+  accessToken: string,
+  repoFullName: string,
+  issueNumber: number,
+  body: string
+): Promise<void> {
+  const res = await fetch(`https://api.github.com/repos/${repoFullName}/issues/${issueNumber}/comments`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'stackcendra',
+    },
+    body: JSON.stringify({ body }),
+  });
+  if (!res.ok) throw new Error(`GitHub add comment failed: ${res.status}`);
+}
+
+export async function fetchCloseGithubIssue(accessToken: string, repoFullName: string, issueNumber: number): Promise<void> {
+  const res = await fetch(`https://api.github.com/repos/${repoFullName}/issues/${issueNumber}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'stackcendra',
+    },
+    body: JSON.stringify({ state: 'closed' }),
+  });
+  if (!res.ok) throw new Error(`GitHub close issue failed: ${res.status}`);
+}
+
+export async function closeGithubIssue(
+  userId: string,
+  repoFullName: string,
+  issueNumber: number,
+  comment?: string
+): Promise<void> {
+  if (!GITHUB_REPO_FULL_NAME_RE.test(repoFullName)) throw new Error('Invalid repository name');
+  const accessToken = await getAccessToken(userId, 'github');
+  if (!accessToken) throw new Error('GitHub is not connected for this user');
+  if (comment && comment.trim()) {
+    await fetchAddGithubIssueComment(accessToken, repoFullName, issueNumber, comment);
+  }
+  await fetchCloseGithubIssue(accessToken, repoFullName, issueNumber);
+}
+
 // -- GitLab -----------------------------------------------------------
 //
 // GitLab projects can be nested under groups/subgroups (group/sub/project),
@@ -711,4 +759,78 @@ export async function getGitlabIssues(userId: string, projectPath: string): Prom
   const accessToken = await getAccessToken(userId, 'gitlab');
   if (!accessToken) throw new Error('GitLab is not connected for this user');
   return fetchGitlabIssues(accessToken, projectPath);
+}
+
+export interface GitlabCreatedIssue {
+  iid: number;
+  title: string;
+  htmlUrl: string;
+}
+
+export async function fetchCreateGitlabIssue(
+  accessToken: string,
+  projectPath: string,
+  params: { title: string; description?: string }
+): Promise<GitlabCreatedIssue> {
+  const res = await fetch(`https://gitlab.com/api/v4/projects/${encodeURIComponent(projectPath)}/issues`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: params.title, description: params.description }),
+  });
+  if (!res.ok) throw new Error(`GitLab create issue failed: ${res.status}`);
+  const data = await res.json();
+  return { iid: data.iid, title: data.title, htmlUrl: data.web_url };
+}
+
+export async function createGitlabIssue(
+  userId: string,
+  projectPath: string,
+  params: { title: string; description?: string }
+): Promise<GitlabCreatedIssue> {
+  if (!GITLAB_PROJECT_PATH_RE.test(projectPath)) throw new Error('Invalid project path');
+  if (!params.title.trim()) throw new Error('Issue title is required');
+  const accessToken = await getAccessToken(userId, 'gitlab');
+  if (!accessToken) throw new Error('GitLab is not connected for this user');
+  return fetchCreateGitlabIssue(accessToken, projectPath, params);
+}
+
+export async function fetchAddGitlabIssueComment(
+  accessToken: string,
+  projectPath: string,
+  issueIid: number,
+  body: string
+): Promise<void> {
+  const res = await fetch(
+    `https://gitlab.com/api/v4/projects/${encodeURIComponent(projectPath)}/issues/${issueIid}/notes`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    }
+  );
+  if (!res.ok) throw new Error(`GitLab add comment failed: ${res.status}`);
+}
+
+export async function fetchCloseGitlabIssue(accessToken: string, projectPath: string, issueIid: number): Promise<void> {
+  const res = await fetch(`https://gitlab.com/api/v4/projects/${encodeURIComponent(projectPath)}/issues/${issueIid}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ state_event: 'close' }),
+  });
+  if (!res.ok) throw new Error(`GitLab close issue failed: ${res.status}`);
+}
+
+export async function closeGitlabIssue(
+  userId: string,
+  projectPath: string,
+  issueIid: number,
+  comment?: string
+): Promise<void> {
+  if (!GITLAB_PROJECT_PATH_RE.test(projectPath)) throw new Error('Invalid project path');
+  const accessToken = await getAccessToken(userId, 'gitlab');
+  if (!accessToken) throw new Error('GitLab is not connected for this user');
+  if (comment && comment.trim()) {
+    await fetchAddGitlabIssueComment(accessToken, projectPath, issueIid, comment);
+  }
+  await fetchCloseGitlabIssue(accessToken, projectPath, issueIid);
 }

@@ -9,6 +9,7 @@ export interface SprintItem {
   title: string;
   columnStatus: string;
   storyPoints: number | null;
+  closed: boolean;
   createdAt: string;
 }
 
@@ -23,6 +24,7 @@ interface SprintItemRow {
   title: string;
   column_status: string;
   story_points: number | null;
+  closed: boolean;
   created_at: string;
 }
 
@@ -36,12 +38,32 @@ function mapRow(row: SprintItemRow): SprintItem {
     title: row.title,
     columnStatus: row.column_status,
     storyPoints: row.story_points,
+    closed: row.closed,
     createdAt: row.created_at,
   };
 }
 
 const SELECT_COLUMNS =
-  'id, provider, repo_full_name, issue_number, issue_html_url, title, column_status, story_points, created_at';
+  'id, provider, repo_full_name, issue_number, issue_html_url, title, column_status, story_points, closed, created_at';
+
+export async function getSprintItem(userId: string, id: string): Promise<SprintItem | null> {
+  const result = await pool.query(
+    `select ${SELECT_COLUMNS} from sprint_items where id = $1 and user_id = $2`,
+    [id, userId]
+  );
+  if (result.rowCount === 0) return null;
+  return mapRow(result.rows[0]);
+}
+
+export async function markSprintItemClosed(userId: string, id: string): Promise<SprintItem | null> {
+  const result = await pool.query(
+    `update sprint_items set closed = true, column_status = 'done' where id = $1 and user_id = $2
+     returning ${SELECT_COLUMNS}`,
+    [id, userId]
+  );
+  if (result.rowCount === 0) return null;
+  return mapRow(result.rows[0]);
+}
 
 export async function saveSprintItem(params: {
   userId: string;
