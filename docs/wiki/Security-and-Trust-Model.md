@@ -4,6 +4,8 @@
 
 StackCendra observes and eventually changes developer machines and production infrastructure. Security is therefore a product capability and a release gate, not a later hardening exercise.
 
+This trust model applies identically to both product editions defined in [ADR 0007](https://github.com/keshav-019/stackcendra/wiki/ADR-0007-Two-Edition-Product-Model). The Enterprise edition adds organization membership, policy, approvals, and audit coordination through the cloud control plane; it does not relax the requirement that private keys and decrypted secrets remain on the user's device. A company evaluating StackCendra should be able to verify that no edition requires trusting the vendor with credential material.
+
 ## Golden execution rule
 
 ```text

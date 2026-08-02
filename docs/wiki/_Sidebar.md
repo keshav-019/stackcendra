@@ -9,6 +9,7 @@
 - [Product areas](https://github.com/keshav-019/stackcendra/wiki/Product-Areas-and-Information-Architecture)
 - [Glossary](https://github.com/keshav-019/stackcendra/wiki/Glossary)
 - [Flagship demonstration](https://github.com/keshav-019/stackcendra/wiki/Flagship-Demonstration)
+- [Concept UI screens](https://github.com/keshav-019/stackcendra/wiki/Concept-UI-Screens)
 
 ### Planning
 
@@ -43,5 +44,6 @@
 - [Data, contracts, and events](https://github.com/keshav-019/stackcendra/wiki/Data-Contracts-and-Events)
 - [Local development](https://github.com/keshav-019/stackcendra/wiki/Local-Development-Environment)
 - [Toolchain setup record](https://github.com/keshav-019/stackcendra/wiki/Toolchain-Setup-Record)
+- [External platform setup](https://github.com/keshav-019/stackcendra/wiki/External-Platform-Setup)
 - [Testing and observability](https://github.com/keshav-019/stackcendra/wiki/Testing-Quality-and-Observability)
 - [Architecture decisions](https://github.com/keshav-019/stackcendra/wiki/Architecture-Decisions)

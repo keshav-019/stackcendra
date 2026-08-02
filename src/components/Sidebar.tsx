@@ -1,10 +1,12 @@
 
 import React from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Monitor, GitBranch, Users, Settings, Calendar, Play } from 'lucide-react';
+import { Monitor, GitBranch, Users, Settings, Calendar, Play, Plus } from 'lucide-react';
+import { mockProjects } from '@/lib/mock-projects';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -12,11 +14,16 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
-  const projects = [
-    { name: 'E-Commerce API', status: 'active', errors: 3 },
-    { name: 'Analytics Dashboard', status: 'building', errors: 0 },
-    { name: 'User Service', status: 'error', errors: 12 },
-  ];
+  const projects = mockProjects.map((project) => ({
+    id: project.id,
+    name: project.name,
+    status: project.ciRuns.some((r) => r.status === 'failed')
+      ? 'error'
+      : project.uncommittedFiles > 0 || project.commitsBehindOrigin > 0
+      ? 'building'
+      : 'active',
+    errors: project.ciRuns.filter((r) => r.status === 'failed').length,
+  }));
 
   const teamMembers = [
     { name: 'Sarah Chen', avatar: '/placeholder.svg', status: 'online', role: 'DevOps Lead' },
@@ -31,9 +38,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   ];
 
   return (
-    <div className={`${collapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-black/20 backdrop-blur-md border-r border-white/10 flex flex-col`}>
+    <div className={`${collapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-black/20 backdrop-blur-md border-r border-white/10 flex flex-col min-h-0`}>
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-white/10">
+      <div className="p-4 border-b border-white/10 flex-shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -46,33 +53,45 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       </div>
 
       {/* Projects Section */}
-      <div className="p-4 flex-1 overflow-y-auto">
+      <div className="p-4 flex-1 min-h-0 overflow-y-auto">
         {!collapsed && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-sm font-semibold text-gray-300 mb-3">Active Projects</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-300">Active Projects</h3>
+                <Link href="/projects/new">
+                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-gray-400 hover:text-white" title="Add project">
+                    <Plus size={14} />
+                  </Button>
+                </Link>
+              </div>
               <div className="space-y-2">
-                {projects.map((project, index) => (
-                  <Card key={index} className="p-3 bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-white">{project.name}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <div className={`w-2 h-2 rounded-full ${
-                            project.status === 'active' ? 'bg-green-400' : 
-                            project.status === 'building' ? 'bg-yellow-400' : 'bg-red-400'
-                          }`} />
-                          <span className="text-xs text-gray-400 capitalize">{project.status}</span>
+                {projects.map((project) => (
+                  <Link key={project.id} href={`/projects/${project.id}`}>
+                    <Card className="p-3 bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-white">{project.name}</p>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <div className={`w-2 h-2 rounded-full ${
+                              project.status === 'active' ? 'bg-green-400' :
+                              project.status === 'building' ? 'bg-yellow-400' : 'bg-red-400'
+                            }`} />
+                            <span className="text-xs text-gray-400 capitalize">{project.status}</span>
+                          </div>
                         </div>
+                        {project.errors > 0 && (
+                          <Badge variant="destructive" className="text-xs">
+                            {project.errors}
+                          </Badge>
+                        )}
                       </div>
-                      {project.errors > 0 && (
-                        <Badge variant="destructive" className="text-xs">
-                          {project.errors}
-                        </Badge>
-                      )}
-                    </div>
-                  </Card>
+                    </Card>
+                  </Link>
                 ))}
+                <Link href="/projects" className="block text-xs text-gray-400 hover:text-white text-center pt-1">
+                  View all projects
+                </Link>
               </div>
             </div>
 

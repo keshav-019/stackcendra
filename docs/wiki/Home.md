@@ -10,6 +10,8 @@ The project is in **Phase 0: Foundation and product architecture**. The reposito
 
 The complete Phase 0–13 plan is now defined. Later phases are specifications, not claims of implemented behavior.
 
+The web application now runs on a lightweight Next.js App Router shell (App Router, React 19) instead of the original Vite prototype. Concept screens now cover `/login`, `/signup`, the unified dashboard, `/projects`, `/projects/new` (an Add Project wizard with GitHub/GitLab connect and repository selection), `/projects/[id]` (Git status, CI/CD run list, and an AI-suggested-fix panel), and `/settings`/`/profile` (one shared account-and-settings shell with a persistent two-group sub-nav — Personal and Workspace — covering twelve sections, not two disconnected pages). `/login` and `/signup` now have real GitHub **and** Google OAuth sign-in via Auth.js (see [ADR 0008](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth)), with the signed-in user and their linked OAuth account persisted for real in Postgres (see [ADR 0010](https://github.com/keshav-019/stackcendra/wiki/ADR-0010-Postgres-User-Persistence)) while the session itself stays a JWT cookie. Every route except `/login` and `/signup` now requires a real session — visiting the dashboard or any other page unauthenticated redirects to `/login` (see [ADR 0009](https://github.com/keshav-019/stackcendra/wiki/ADR-0009-Route-Gating)), reversing the earlier "no gating" decision now that sign-in is real. Every non-dashboard screen has an explicit "Dashboard" back-link in its header, not just an implicit logo click. A Vitest + Playwright test suite now covers both (64 unit/component tests, 61 E2E tests, all passing) — see [Testing, Quality, and Observability](https://github.com/keshav-019/stackcendra/wiki/Testing-Quality-and-Observability); writing it caught a real remaining hydration bug (locale, not just timezone, must be pinned in `toLocaleTimeString` calls) and several real Playwright/OAuth-testing gotchas worth remembering. Both GitHub and GitLab repo access are now real, deliberately separate from sign-in — see [ADR 0011](https://github.com/keshav-019/stackcendra/wiki/ADR-0011-GitHub-Repo-Integration) and [ADR 0012](https://github.com/keshav-019/stackcendra/wiki/ADR-0012-GitLab-Repo-Integration) — powering their Settings → Integrations rows, a real CI/CD activity panel per connected provider (live GitHub Actions workflow runs / GitLab pipelines with failure detail), and the Add Project wizard's repository picker, with every access token encrypted at rest and GitLab's short-lived tokens refreshed automatically. The Security section now shows sign-in method as a single fixed choice made at signup rather than something a Connect button can add to later (D-022). The dashboard itself is now provider-mode-aware: the user icon's "Open ▸" submenu switches into a real GitHub- or GitLab-scoped view (`?mode=github`/`?mode=gitlab`) with real branches/commits/PRs-MRs/CI runs, a real GitHub-backed Sprint board (issues really post to GitHub; column/points stay local), and a read-only GitLab issues view — while Team Call and My Tasks stay the exact same components in every mode, and a GitHub issue created via Sprint shows up tagged in My Tasks — see [ADR 0013](https://github.com/keshav-019/stackcendra/wiki/ADR-0013-Provider-Mode-Switching). Everything else remains unwired to a real Git provider or backend; see [Concept UI Screens](https://github.com/keshav-019/stackcendra/wiki/Concept-UI-Screens) for the running inventory and the visual-standard rules. The full pnpm-workspace monorepo, shared contracts, and Tauri shell described in [Phase 0 Execution Backlog](https://github.com/keshav-019/stackcendra/wiki/Phase-0-Execution-Backlog) remain planned, not built.
+
 ## Canonical product question
 
 > Why does this application work locally but fail in staging or production?
@@ -25,6 +27,7 @@ The first useful versions of StackCendra must answer that question better than a
 - [Product Areas and Information Architecture](https://github.com/keshav-019/stackcendra/wiki/Product-Areas-and-Information-Architecture)
 - [Glossary](https://github.com/keshav-019/stackcendra/wiki/Glossary)
 - [Flagship Demonstration](https://github.com/keshav-019/stackcendra/wiki/Flagship-Demonstration)
+- [Concept UI Screens](https://github.com/keshav-019/stackcendra/wiki/Concept-UI-Screens)
 
 ### Planning
 
@@ -62,6 +65,7 @@ The first useful versions of StackCendra must answer that question better than a
 - [Data Contracts and Events](https://github.com/keshav-019/stackcendra/wiki/Data-Contracts-and-Events)
 - [Local Development Environment](https://github.com/keshav-019/stackcendra/wiki/Local-Development-Environment)
 - [Toolchain Setup Record](https://github.com/keshav-019/stackcendra/wiki/Toolchain-Setup-Record)
+- [External Platform Setup](https://github.com/keshav-019/stackcendra/wiki/External-Platform-Setup)
 - [Testing Quality and Observability](https://github.com/keshav-019/stackcendra/wiki/Testing-Quality-and-Observability)
 - [Architecture Decisions](https://github.com/keshav-019/stackcendra/wiki/Architecture-Decisions)
 
@@ -81,11 +85,24 @@ Phase 0 is complete only when:
 ## Current decisions
 
 - Use Node.js 24 LTS for the JavaScript toolchain.
-- Use pnpm workspaces as the package and workspace manager.
-- Migrate the Vite prototype to the Next.js App Router; Next.js remains a React framework.
+- Use pnpm workspaces as the package and workspace manager for the full monorepo; the current lightweight Next.js shell still uses npm and is migrated to the pnpm workspace during P0-004.
+- Migrate the Vite prototype to the Next.js App Router; Next.js remains a React framework. A lightweight App Router shell (routing and build only, no monorepo/contracts/CI) is in place; the full P0-005 scope remains planned.
 - Use Tauri 2 with the Rust stable MSVC toolchain for the desktop application.
+- Ship two product editions — Individual (free, fully local) and Enterprise (adds team, policy, and audit coordination) — on the same desktop-first core; see [ADR 0007](https://github.com/keshav-019/stackcendra/wiki/ADR-0007-Two-Edition-Product-Model).
+- Privileged local capabilities (SSH, filesystem, terminals, Docker, private keys) are desktop-only in both editions and are never exposed as ordinary web/browser APIs, regardless of edition.
+- Use Auth.js with GitHub OAuth (JWT session) as a starting point for real web sign-in; this is not yet the final identity-provider decision for Enterprise SSO or the desktop app — see [ADR 0008](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth).
+- Every route except `/login` and `/signup` requires a real session, enforced by middleware — see [ADR 0009](https://github.com/keshav-019/stackcendra/wiki/ADR-0009-Route-Gating).
+- Persist users and linked OAuth accounts to Postgres via the official Auth.js adapter, while keeping the session token itself a JWT — see [ADR 0010](https://github.com/keshav-019/stackcendra/wiki/ADR-0010-Postgres-User-Persistence).
+- Request GitHub repo access only when connecting a project, never bundled into sign-in, using a second, separate GitHub OAuth App with its own encrypted server-side token storage — see [ADR 0011](https://github.com/keshav-019/stackcendra/wiki/ADR-0011-GitHub-Repo-Integration).
+- Use a single GitLab OAuth App (no sign-in split needed) with automatic refresh-token handling for its short-lived access tokens, and a shared CI/CD activity UI component across GitHub and GitLab — see [ADR 0012](https://github.com/keshav-019/stackcendra/wiki/ADR-0012-GitLab-Repo-Integration).
+- Fix each account's sign-in method to whichever provider was chosen at signup; no post-signup linking of a second sign-in provider — see D-022.
+- Switch the dashboard into a real provider-scoped view via a URL mode param, with a repo/project picker inside the mode rather than making "Projects" real yet; Sprint issues created in GitHub mode really post to GitHub while column/story-points stay local-only — see [ADR 0013](https://github.com/keshav-019/stackcendra/wiki/ADR-0013-Provider-Mode-Switching).
 - Start the Go control plane as a modular monolith.
 - Treat AI as an evidence-producing advisor, never an authorization authority.
 - Keep production credentials and raw customer data out of AI prompts and local reproduction bundles.
 
 The decision log and architecture decision records explain the reasoning and consequences behind each choice.
+
+## Wiki maintenance habit
+
+The Wiki is updated in the same pass as the requirement change that caused it, not on a separate cleanup pass. When a product decision, screen concept, or architectural boundary changes during implementation, the relevant page — and this Home page's decision list if the change is significant — is corrected before moving to the next task. A Wiki page describing behavior that no longer matches the repository is treated as a defect, per [Wiki Review Guide](https://github.com/keshav-019/stackcendra/wiki/Wiki-Review-Guide).

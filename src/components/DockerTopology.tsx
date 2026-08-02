@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Monitor, Play, Settings, AlertTriangle } from 'lucide-react';
+import { Monitor, Play, Settings, AlertTriangle, MonitorSmartphone } from 'lucide-react';
 
 interface Container {
   id: string;
@@ -110,11 +110,20 @@ export const DockerTopology = () => {
             <Settings className="text-blue-400" size={20} />
             Container Topology
           </h3>
-          <Button size="sm" className="bg-gradient-docker">
-            <Play size={16} className="mr-1" />
-            Deploy All
-          </Button>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs text-gray-400 border-white/20 flex items-center gap-1">
+              <MonitorSmartphone size={12} />
+              Desktop only
+            </Badge>
+            <Button size="sm" className="bg-gradient-docker" title="Runs every detected docker-compose.yml on this machine — available in the desktop app only">
+              <Play size={16} className="mr-1" />
+              Deploy All
+            </Button>
+          </div>
         </div>
+        <p className="text-xs text-gray-500 -mt-2 mb-4">
+          Scans this project for <code className="text-gray-400">docker-compose.yml</code> files and starts every detected service locally. Requires the StackCendra desktop app.
+        </p>
 
         {/* Interactive Container Map */}
         <div className="relative mb-6 bg-black/30 rounded-lg p-4 min-h-[300px]">
