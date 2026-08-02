@@ -7,6 +7,10 @@ import {
   fetchGitlabPipelines,
   fetchGitlabPipelineFailures,
   GITLAB_PROJECT_PATH_RE,
+  fetchGithubRepoOverview,
+  fetchGitlabRepoOverview,
+  fetchCreateGithubIssue,
+  fetchGitlabIssues,
 } from './integrations';
 
 afterEach(() => {
@@ -268,6 +272,213 @@ describe('fetchGitlabPipelineFailures', () => {
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer token123' }) })
     );
     expect(failures).toEqual([{ jobName: 'test', stepName: 'test', conclusion: 'script_failure' }]);
+  });
+});
+
+describe('fetchGithubRepoOverview', () => {
+  it('bundles branches, commits, and pull requests into one normalized object', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/branches')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => [{ name: 'main', commit: { sha: 'abc1234567' }, protected: true }],
+        });
+      }
+      if (url.includes('/commits')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => [
+            {
+              sha: 'def5678',
+              commit: { message: 'Fix bug\n\nDetails', author: { name: 'Jane Doe', date: '2026-07-30T10:00:00Z' } },
+              author: { login: 'janedoe' },
+              html_url: 'https://github.com/octocat/hello-world/commit/def5678',
+            },
+          ],
+        });
+      }
+      if (url.includes('/pulls')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => [
+            {
+              number: 5,
+              title: 'Add feature',
+              user: { login: 'octocat' },
+              html_url: 'https://github.com/octocat/hello-world/pull/5',
+              head: { ref: 'feature/x' },
+              base: { ref: 'main' },
+              created_at: '2026-07-29T10:00:00Z',
+            },
+          ],
+        });
+      }
+      throw new Error('unexpected url: ' + url);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const overview = await fetchGithubRepoOverview('token123', 'octocat/hello-world');
+
+    expect(overview.branches).toEqual([{ name: 'main', sha: 'abc1234567', protected: true }]);
+    expect(overview.commits).toEqual([
+      {
+        sha: 'def5678',
+        message: 'Fix bug\n\nDetails',
+        authorLogin: 'janedoe',
+        authorName: 'Jane Doe',
+        date: '2026-07-30T10:00:00Z',
+        htmlUrl: 'https://github.com/octocat/hello-world/commit/def5678',
+      },
+    ]);
+    expect(overview.pullRequests).toEqual([
+      {
+        number: 5,
+        title: 'Add feature',
+        authorLogin: 'octocat',
+        htmlUrl: 'https://github.com/octocat/hello-world/pull/5',
+        headRef: 'feature/x',
+        baseRef: 'main',
+        createdAt: '2026-07-29T10:00:00Z',
+      },
+    ]);
+  });
+
+  it('throws when any of the three underlying calls fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        if (url.includes('/branches')) return Promise.resolve({ ok: false, status: 404 });
+        return Promise.resolve({ ok: true, json: async () => [] });
+      })
+    );
+    await expect(fetchGithubRepoOverview('token123', 'octocat/hello-world')).rejects.toThrow(/404/);
+  });
+});
+
+describe('fetchGitlabRepoOverview', () => {
+  it('bundles branches, commits, and merge requests into one normalized object', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/repository/branches')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => [{ name: 'main', commit: { id: 'abc1234567' }, protected: true }],
+        });
+      }
+      if (url.includes('/repository/commits')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => [
+            {
+              id: 'def5678',
+              title: 'Fix bug',
+              author_name: 'Jane Doe',
+              authored_date: '2026-07-30T10:00:00Z',
+              web_url: 'https://gitlab.com/acme-corp/demo/-/commit/def5678',
+            },
+          ],
+        });
+      }
+      if (url.includes('/merge_requests')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => [
+            {
+              iid: 5,
+              title: 'Add feature',
+              author: { username: 'octocat' },
+              web_url: 'https://gitlab.com/acme-corp/demo/-/merge_requests/5',
+              source_branch: 'feature/x',
+              target_branch: 'main',
+              created_at: '2026-07-29T10:00:00Z',
+            },
+          ],
+        });
+      }
+      throw new Error('unexpected url: ' + url);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const overview = await fetchGitlabRepoOverview('token123', 'acme-corp/demo');
+
+    expect(overview.branches).toEqual([{ name: 'main', sha: 'abc1234567', protected: true }]);
+    expect(overview.commits).toEqual([
+      {
+        sha: 'def5678',
+        message: 'Fix bug',
+        authorName: 'Jane Doe',
+        date: '2026-07-30T10:00:00Z',
+        htmlUrl: 'https://gitlab.com/acme-corp/demo/-/commit/def5678',
+      },
+    ]);
+    expect(overview.mergeRequests).toEqual([
+      {
+        iid: 5,
+        title: 'Add feature',
+        authorLogin: 'octocat',
+        htmlUrl: 'https://gitlab.com/acme-corp/demo/-/merge_requests/5',
+        sourceBranch: 'feature/x',
+        targetBranch: 'main',
+        createdAt: '2026-07-29T10:00:00Z',
+      },
+    ]);
+  });
+});
+
+describe('fetchCreateGithubIssue', () => {
+  it('posts to the issues endpoint and maps the response', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ number: 12, title: 'Bug', html_url: 'https://github.com/octocat/hello-world/issues/12' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const issue = await fetchCreateGithubIssue('token123', 'octocat/hello-world', { title: 'Bug', body: 'Details' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.github.com/repos/octocat/hello-world/issues',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ title: 'Bug', body: 'Details' }),
+      })
+    );
+    expect(issue).toEqual({ number: 12, title: 'Bug', htmlUrl: 'https://github.com/octocat/hello-world/issues/12' });
+  });
+
+  it('throws when GitHub responds with a non-OK status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 422 }));
+    await expect(fetchCreateGithubIssue('token123', 'octocat/hello-world', { title: 'x' })).rejects.toThrow(/422/);
+  });
+});
+
+describe('fetchGitlabIssues', () => {
+  it('maps GitLab issues into camelCase', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          iid: 3,
+          title: 'Bug',
+          state: 'opened',
+          web_url: 'https://gitlab.com/acme-corp/demo/-/issues/3',
+          author: { username: 'octocat' },
+          created_at: '2026-07-30T10:00:00Z',
+        },
+      ],
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const issues = await fetchGitlabIssues('token123', 'acme-corp/demo');
+
+    expect(issues).toEqual([
+      {
+        iid: 3,
+        title: 'Bug',
+        state: 'opened',
+        htmlUrl: 'https://gitlab.com/acme-corp/demo/-/issues/3',
+        authorLogin: 'octocat',
+        createdAt: '2026-07-30T10:00:00Z',
+      },
+    ]);
   });
 });
 

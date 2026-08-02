@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RunStatusBadge } from '@/components/RunStatusBadge';
 import { mockIntegrations, integrationCategories, IntegrationTier } from '@/lib/mock-integrations';
 import {
   ShieldCheck,
@@ -24,9 +25,6 @@ import {
   Trash2,
   Users,
   Loader2,
-  CheckCircle2,
-  XCircle,
-  CircleDashed,
   ExternalLink,
   ChevronDown,
   ChevronRight,
@@ -110,39 +108,6 @@ interface JobFailure {
   stepName: string | null;
   conclusion: string | null;
 }
-
-const RunStatusBadge: React.FC<{ status: string; conclusion: string | null }> = ({ status, conclusion }) => {
-  if (status !== 'completed') {
-    return (
-      <span className="flex items-center gap-1.5 text-xs text-amber-300">
-        <Loader2 size={14} className="animate-spin" />
-        {status === 'queued' ? 'Queued' : 'Running'}
-      </span>
-    );
-  }
-  if (conclusion === 'success') {
-    return (
-      <span className="flex items-center gap-1.5 text-xs text-green-300">
-        <CheckCircle2 size={14} />
-        Success
-      </span>
-    );
-  }
-  if (conclusion === 'failure') {
-    return (
-      <span className="flex items-center gap-1.5 text-xs text-red-300">
-        <XCircle size={14} />
-        Failed
-      </span>
-    );
-  }
-  return (
-    <span className="flex items-center gap-1.5 text-xs text-gray-400">
-      <CircleDashed size={14} />
-      {conclusion ?? 'Unknown'}
-    </span>
-  );
-};
 
 interface CiProviderConfig {
   label: string;

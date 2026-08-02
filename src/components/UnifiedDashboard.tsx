@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/Sidebar';
@@ -10,7 +11,8 @@ import { DockerTopology } from '@/components/DockerTopology';
 import { DebuggingSession } from '@/components/DebuggingSession';
 import { SprintPlanning } from '@/components/SprintPlanning';
 import { VideoCallInterface } from '@/components/VideoCallInterface';
-import { MyTasks } from '@/components/MyTasks';
+import { MyTasks, Task, TaskSource, initialTasks } from '@/components/MyTasks';
+import { ProviderModeShell } from '@/components/modes/ProviderModeShell';
 import { BottomDock } from '@/components/BottomDock';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { UserDropdown } from '@/components/UserDropdown';
@@ -19,10 +21,20 @@ import { Monitor, GitBranch, Settings, Users, Calendar, MessageCircle } from 'lu
 import { LogoMark } from '@/components/Logo';
 
 export const UnifiedDashboard = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const mode = searchParams.get('mode');
+  const providerMode = mode === 'github' || mode === 'gitlab' ? mode : null;
+
   const [activeTab, setActiveTab] = useState('debugging');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(true);
   const [isManagerMode, setIsManagerMode] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  const handleOpenSource = (source: TaskSource) => {
+    router.push(`/?mode=${source.provider}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden">
@@ -51,6 +63,15 @@ export const UnifiedDashboard = () => {
 
           {/* Tabbed Interface */}
           <div className="flex-1 flex flex-col p-4 overflow-hidden">
+            {providerMode ? (
+              <ProviderModeShell
+                provider={providerMode}
+                isManagerMode={isManagerMode}
+                tasks={tasks}
+                onTasksChange={setTasks}
+                onOpenSource={handleOpenSource}
+              />
+            ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
               <TabsList className={`grid w-full ${isManagerMode ? 'grid-cols-5' : 'grid-cols-6'} mb-4 bg-black/20 flex-shrink-0`}>
                 <TabsTrigger value="debugging" className="flex items-center gap-2">
@@ -115,12 +136,13 @@ export const UnifiedDashboard = () => {
                 {!isManagerMode && (
                   <TabsContent value="mytasks" className="h-full">
                     <div className="h-full overflow-y-auto pr-2 pb-6">
-                      <MyTasks />
+                      <MyTasks tasks={tasks} onTasksChange={setTasks} onOpenSource={handleOpenSource} />
                     </div>
                   </TabsContent>
                 )}
               </div>
             </Tabs>
+            )}
           </div>
         </div>
 
