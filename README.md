@@ -6,11 +6,24 @@ StackCendra is an AI-native engineering workspace designed to understand source 
 
 > Detect, reproduce, and resolve environment-related failures across local development and production.
 
+**Live:** [stackcendra.com](https://stackcendra.com)
+
+| Debug session with AI assistant | Project Git + CI/CD status |
+| --- | --- |
+| ![StackCendra debug session](docs/screenshots/dashboard.jpg) | ![StackCendra project detail](docs/screenshots/project-detail.jpg) |
+
+<sub>Screens show sample workspace data.</sub>
+
 ## Project status
 
 StackCendra is in **Phase 0: Foundation and product architecture**.
 
-The current application is a visual prototype running on a lightweight Next.js App Router shell. It demonstrates possible interface concepts — including the dashboard and concept `/login` and `/signup` screens — but it is not yet connected to a backend, desktop agent, container runtime, cloud account, or AI investigation service. Phase 0 establishes the product contract and engineering foundation before those systems are implemented. See [Concept UI Screens](docs/wiki/Concept-UI-Screens.md) for the running screen inventory.
+The web app runs on Next.js App Router and is deployed at [stackcendra.com](https://stackcendra.com). What is real today:
+
+- **Sign-in with GitHub or Google.** Email/password is still concept UI.
+- **GitHub and GitLab integrations:** access tokens are encrypted (AES-256-GCM) before storage and only decrypted server-side; GitLab tokens auto-refresh. The integrations page shows live CI/CD activity from connected repositories.
+
+The dashboard, project views, debug session and AI assistant are still interface concepts running on sample data. They are not yet connected to a desktop agent, container runtime, cloud account, or AI investigation service. See [Concept UI Screens](docs/wiki/Concept-UI-Screens.md) for the running screen inventory.
 
 ## Documentation
 
