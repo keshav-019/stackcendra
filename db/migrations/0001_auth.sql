@@ -1,9 +1,7 @@
 -- Official Auth.js schema for @auth/pg-adapter, adapted to use UUID ids
 -- (Auth.js's AdapterUser.id is typed as string; UUID avoids a numeric/string
 -- mismatch that a SERIAL integer id would introduce).
--- No migration tool is chosen yet (see the open decision in
--- docs/wiki/Risks-Non-Goals-and-Decision-Log.md) -- this file is the
--- source of truth to re-run by hand until one is.
+-- Applied by deploy/scripts/migrate.sh (see deploy/README.md).
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 

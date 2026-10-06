@@ -18,7 +18,7 @@ StackCendra is an AI-native engineering workspace designed to understand source 
 
 StackCendra is in **Phase 0: Foundation and product architecture**.
 
-The web app runs on Next.js App Router and is deployed at [stackcendra.com](https://stackcendra.com). What is real today:
+The web app runs on Next.js App Router and is deployed at [stackcendra.com](https://stackcendra.com) (Vercel), with a self-hosted instance and its PostgreSQL database on a VM, deployed by CI on every push to `main` (see [deploy/README.md](deploy/README.md)). What is real today:
 
 - **Sign-in with GitHub or Google.** Email/password is still concept UI.
 - **GitHub and GitLab integrations:** access tokens are encrypted (AES-256-GCM) before storage and only decrypted server-side; GitLab tokens auto-refresh. The integrations page shows live CI/CD activity from connected repositories.

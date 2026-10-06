@@ -1,0 +1,43 @@
+# StackCendra on the VM (vanisher.projectyourown.com).
+#
+# Lives at ~/stackcendra/deploy on the VM; CI copies this directory and
+# db/migrations there on every deploy, then runs scripts/deploy.sh.
+# Not in git (create on the VM): .env (see README.md).
+#
+# Postgres is NOT defined here: the database `stackcendra` lives in the
+# shared `pg` container from the breachsphire stack. This app joins that
+# stack's network and reaches it as `postgres` (a name in the server
+# cert's SAN, so verify-full works).
+name: stackcendra
+
+services:
+  web:
+    # CI pushes ghcr.io/keshav-019/stackcendra-web:<commit>; deploy.sh
+    # tags the deployed one stackcendra-web:current (and keeps :previous
+    # for rollback). Never built or pulled here.
+    image: stackcendra-web:current
+    pull_policy: never
+    container_name: stackcendra
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://${DB_USER}@postgres:5432/${DB_NAME}?sslmode=verify-full
+      # pg reads the password from PGPASSWORD, so it never needs URL-encoding.
+      PGPASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
+      INTEGRATION_ENCRYPTION_KEY: ${INTEGRATION_ENCRYPTION_KEY:?set INTEGRATION_ENCRYPTION_KEY in .env}
+      NODE_EXTRA_CA_CERTS: /certs/ca.crt
+      NODE_OPTIONS: --max-old-space-size=256
+    volumes:
+      - ${PG_CA_CERT:-../../breachsphire/deploy/certs/ca.crt}:/certs/ca.crt:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - db
+    mem_limit: 400m
+
+networks:
+  db:
+    name: breachsphire_default
+    external: true
