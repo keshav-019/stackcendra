@@ -1,12 +1,13 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Monitor, GitBranch, Users, Settings, Calendar, Play, Plus } from 'lucide-react';
-import { mockProjects } from '@/lib/mock-projects';
+import { providerIcon } from '@/components/projects/provider-meta';
+import type { Project } from '@/lib/project-schema';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -14,16 +15,24 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
-  const projects = mockProjects.map((project) => ({
-    id: project.id,
-    name: project.name,
-    status: project.ciRuns.some((r) => r.status === 'failed')
-      ? 'error'
-      : project.uncommittedFiles > 0 || project.commitsBehindOrigin > 0
-      ? 'building'
-      : 'active',
-    errors: project.ciRuns.filter((r) => r.status === 'failed').length,
-  }));
+  // null while loading; the five most recent projects once loaded.
+  const [projects, setProjects] = useState<Project[] | null>(null);
+  const [projectsError, setProjectsError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/projects')
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+      .then((data: { projects: Project[] }) => {
+        if (!cancelled) setProjects(data.projects.slice(0, 5));
+      })
+      .catch(() => {
+        if (!cancelled) setProjectsError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const teamMembers = [
     { name: 'Sarah Chen', avatar: '/placeholder.svg', status: 'online', role: 'DevOps Lead' },
@@ -58,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
           <div className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-300">Active Projects</h3>
+                <h3 className="text-sm font-semibold text-gray-300">Projects</h3>
                 <Link href="/projects/new">
                   <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-gray-400 hover:text-white" title="Add project">
                     <Plus size={14} />
@@ -66,29 +75,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                 </Link>
               </div>
               <div className="space-y-2">
-                {projects.map((project) => (
-                  <Link key={project.id} href={`/projects/${project.id}`}>
-                    <Card className="p-3 bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-white">{project.name}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <div className={`w-2 h-2 rounded-full ${
-                              project.status === 'active' ? 'bg-green-400' :
-                              project.status === 'building' ? 'bg-yellow-400' : 'bg-red-400'
-                            }`} />
-                            <span className="text-xs text-gray-400 capitalize">{project.status}</span>
-                          </div>
-                        </div>
-                        {project.errors > 0 && (
-                          <Badge variant="destructive" className="text-xs">
-                            {project.errors}
-                          </Badge>
-                        )}
-                      </div>
-                    </Card>
+                {projectsError && <p className="text-xs text-red-400">Couldn&apos;t load projects.</p>}
+                {!projectsError && projects === null && <p className="text-xs text-gray-500">Loading projects…</p>}
+                {projects?.length === 0 && (
+                  <Link href="/projects/new" className="block text-xs text-gray-400 hover:text-white">
+                    No projects yet. Add one →
                   </Link>
-                ))}
+                )}
+                {projects?.map((project) => {
+                  const Icon = providerIcon[project.provider];
+                  return (
+                    <Link key={project.id} href={`/projects/${project.id}`} className="block">
+                      <Card className="p-3 bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+                        <p className="text-sm font-medium text-white truncate">{project.name}</p>
+                        <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400 min-w-0">
+                          <Icon size={12} className="flex-shrink-0" />
+                          <span className="truncate">{project.repoFullName ?? 'Local only'}</span>
+                        </div>
+                      </Card>
+                    </Link>
+                  );
+                })}
                 <Link href="/projects" className="block text-xs text-gray-400 hover:text-white text-center pt-1">
                   View all projects
                 </Link>

@@ -12,19 +12,21 @@ The app container joins the breachsphire stack's Docker network
 (`breachsphire_default`) and reaches Postgres as `postgres` with
 `sslmode=verify-full`, using that stack's CA (`~/breachsphire/deploy/certs/ca.crt`).
 
-On the VM everything lives in `~/stackcendra`: `deploy/` (this directory) and
-`db/migrations/`, both copied there by CI. Backups go to `/data/backups`.
+On the VM everything lives in `~/stackcendra/deploy` (this directory, copied
+there by CI). Backups go to `/data/backups`.
 
 ## How a deploy happens
 
 Every push to `main` (except docs-only changes) runs
 [`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml):
 
-1. **check**: `npm ci`, lint, unit tests, `next build`, shellcheck these scripts.
+1. **check**: `npm ci`, lint, typecheck, unit tests, API tests (against a
+   Postgres service container), `next build`, shellcheck these scripts.
+   **e2e** (in parallel): Playwright against a production build and Postgres.
 2. **image**: build the [`Dockerfile`](../Dockerfile) (Next.js standalone) and
    push `ghcr.io/keshav-019/stackcendra-web:<commit-sha>` (and `:main`).
 3. **deploy** (environment `vm-production`, `main` only): SSH in with the deploy
-   key, copy `deploy/` and `db/migrations/` to `~/stackcendra`, log in to GHCR
+   key, copy `deploy/` to `~/stackcendra`, log in to GHCR
    for this job only, then run [`scripts/deploy.sh`](scripts/deploy.sh):
    pull image → back up DB → apply pending migrations → swap the container →
    health check (`/api/health`, which also checks the DB) → **roll back to the
@@ -36,8 +38,12 @@ started by hand: Actions → CI/CD → Run workflow (on `main`).
 ## Database migrations
 
 `db/migrations/NNNN_name.sql`, applied in order by
-[`scripts/migrate.sh`](scripts/migrate.sh) and recorded in
-`migrations.schema_migrations`. Each file runs in one transaction. Migrations
+[`scripts/migrate.mjs`](../scripts/migrate.mjs) and recorded in
+`migrations.schema_migrations`. Each file runs in one transaction. The same
+runner is used locally (`npm run db:migrate`), in CI, and here: the release
+image contains it and the migrations, and `deploy.sh` runs it from the new
+image before swapping containers, so a deploy always applies exactly the
+schema its code expects. Migrations
 are forward-only: add a new numbered file, never edit an applied one. A
 rollback restores the previous image but not the schema; every deploy takes a
 backup first (newest 7 kept).
@@ -79,7 +85,7 @@ Environment **vm-production** (deployments limited to `main`) holds:
 docker compose ps                      # status
 docker compose logs -f web             # app logs
 scripts/backup.sh                      # manual backup -> /data/backups
-scripts/migrate.sh --dry-run           # list pending migrations
+docker compose run --rm --no-deps -T web node scripts/migrate.mjs --dry-run   # pending migrations
 docker tag stackcendra-web:previous stackcendra-web:current && docker compose up -d --no-deps web   # manual rollback
 docker exec -it pg psql -U stackcendra -d stackcendra   # SQL shell
 ```

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Deploys one web image on the VM: backup -> migrations -> swap the
-# container -> health check, rolling back to the previous image if the new
-# one does not come up healthy.
+# Deploys one web image on the VM: backup -> migrations (run from the new
+# image, db/migrations) -> swap the container -> health check, rolling back
+# to the previous image if the new one does not come up healthy.
 #
 # Usage: deploy/scripts/deploy.sh <image>
 #   e.g. deploy/scripts/deploy.sh ghcr.io/keshav-019/stackcendra-web:<commit-sha>
@@ -40,8 +40,8 @@ docker pull -q "$image"
 # --- 2. backup, then migrations ----------------------------------------------
 log "backing up database"
 ./scripts/backup.sh deploy
-log "running migrations"
-./scripts/migrate.sh
+log "running migrations from the new image"
+WEB_IMAGE="$image" docker compose run --rm --no-deps -T web node scripts/migrate.mjs
 
 # --- 3. swap the container ---------------------------------------------------
 previous=$(docker image inspect -f '{{.Id}}' stackcendra-web:current 2>/dev/null || true)

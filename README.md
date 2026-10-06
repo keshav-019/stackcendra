@@ -97,4 +97,20 @@ These are target responsibility boundaries, not permission to deploy every compo
 | 0.9 | Diagnose incidents using evidence |
 | 1.0 | Reproduce production failures locally |
 
-Implementation instructions will be added after Phase 0 establishes the monorepo and reproducible local development environment.
+## Running the web app locally
+
+Needs Node 22 (`.nvmrc`) and Docker.
+
+```bash
+npm ci
+cp .env.example .env.local   # then set AUTH_SECRET, INTEGRATION_ENCRYPTION_KEY and
+                             # DATABASE_URL=postgres://stackcendra:stackcendra@localhost:5433/stackcendra_dev
+npm run db:up                # Postgres 18 with stackcendra_dev and stackcendra_test
+npm run db:migrate
+npm run dev                  # http://localhost:8080
+```
+
+Tests: `npm test` (unit/component), `npm run test:api` (route handlers against the
+test database), `npm run test:e2e` (Playwright, starts its own server on port 3100).
+See [Testing, Quality, and Observability](docs/wiki/Testing-Quality-and-Observability.md).
+Deployment and CI/CD: [deploy/README.md](deploy/README.md).

@@ -1,7 +1,7 @@
 # StackCendra on the VM (vanisher.projectyourown.com).
 #
-# Lives at ~/stackcendra/deploy on the VM; CI copies this directory and
-# db/migrations there on every deploy, then runs scripts/deploy.sh.
+# Lives at ~/stackcendra/deploy on the VM; CI copies this directory there
+# on every deploy, then runs scripts/deploy.sh.
 # Not in git (create on the VM): .env (see README.md).
 #
 # Postgres is NOT defined here: the database `stackcendra` lives in the
@@ -15,7 +15,9 @@ services:
     # CI pushes ghcr.io/keshav-019/stackcendra-web:<commit>; deploy.sh
     # tags the deployed one stackcendra-web:current (and keeps :previous
     # for rollback). Never built or pulled here.
-    image: stackcendra-web:current
+    # WEB_IMAGE lets deploy.sh run migrations from the new image before
+    # it is tagged current.
+    image: ${WEB_IMAGE:-stackcendra-web:current}
     pull_policy: never
     container_name: stackcendra
     restart: unless-stopped

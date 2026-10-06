@@ -1,7 +1,9 @@
 # CI/CD for the self-hosted deployment on the VM (Vercel deploys the same
 # code to stackcendra.com on its own; this workflow does not touch Vercel).
 #
-#   pull request -> lint + unit tests + build + image build (not pushed)
+#   pull request -> lint, typecheck, unit + API tests (Postgres service),
+#                   Playwright E2E against a production build, image build
+#                   (not pushed)
 #   push to main -> the same, push the image to GHCR, deploy it to the VM
 #
 # The deploy job SSHes into the VM with a dedicated deploy key, copies
@@ -35,25 +37,85 @@ env:
 
 jobs:
   check:
-    name: Lint, test and build
+    name: Lint, unit/API tests and build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: stackcendra
+          POSTGRES_PASSWORD: stackcendra
+          POSTGRES_DB: stackcendra_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stackcendra -d stackcendra_test"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://stackcendra:stackcendra@localhost:5432/stackcendra_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
-      - run: npm test
+      - run: npx tsc --noEmit
+      - name: Unit and component tests
+        run: npm test
+      - name: API tests (route handlers against Postgres)
+        run: npm run test:api
       - run: npm run build
       - name: Lint deploy scripts
         run: shellcheck --severity=warning deploy/scripts/*.sh
 
+  e2e:
+    name: Playwright end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: stackcendra
+          POSTGRES_PASSWORD: stackcendra
+          POSTGRES_DB: stackcendra_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stackcendra -d stackcendra_test"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    env:
+      CI: "true"
+      TEST_DATABASE_URL: postgres://stackcendra:stackcendra@localhost:5432/stackcendra_test
+      # Throwaway secrets for this job's server; the E2E session cookies
+      # are signed with the same AUTH_SECRET.
+      AUTH_SECRET: e2e-only-auth-secret-not-used-anywhere-else
+      INTEGRATION_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npx playwright test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   image:
     name: Build image
-    needs: check
+    needs: [check, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -125,9 +187,9 @@ jobs:
           EOF
 
       # deploy/.env lives only on the VM and is not in git, so this never
-      # overwrites it.
-      - name: Copy deploy files and migrations to the VM
-        run: tar -czf - deploy db/migrations | ssh vm "mkdir -p ~/stackcendra && tar -xzf - -C ~/stackcendra"
+      # overwrites it. Migrations ship inside the image, not here.
+      - name: Copy deploy files to the VM
+        run: tar -czf - deploy | ssh vm "mkdir -p ~/stackcendra && tar -xzf - -C ~/stackcendra"
 
       - name: Log the VM in to GHCR (this job only)
         run: printf '%s' "${{ secrets.GITHUB_TOKEN }}" | ssh vm "docker login ghcr.io -u ${{ github.actor }} --password-stdin"

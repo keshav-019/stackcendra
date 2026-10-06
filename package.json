@@ -8,11 +8,15 @@
     "build": "next build",
     "start": "next start -p 8080",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "db:up": "docker compose -f compose.dev.yaml up -d --wait",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
+    "test:api": "vitest run --project api",
+    "test:all": "vitest run"
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.3",
@@ -93,5 +97,8 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
