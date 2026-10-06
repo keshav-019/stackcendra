@@ -104,7 +104,7 @@ Needs Node 22 (`.nvmrc`) and Docker.
 ```bash
 npm ci
 cp .env.example .env.local   # then set AUTH_SECRET, INTEGRATION_ENCRYPTION_KEY and
-                             # DATABASE_URL=postgres://stackcendra:stackcendra@localhost:5433/stackcendra_dev
+                             # DATABASE_URL=postgres://stackcendra@localhost:5433/stackcendra_dev
 npm run db:up                # Postgres 18 with stackcendra_dev and stackcendra_test
 npm run db:migrate
 npm run dev                  # http://localhost:8080

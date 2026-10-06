@@ -14,10 +14,12 @@ services:
     container_name: stackcendra-dev-pg
     environment:
       POSTGRES_USER: stackcendra
-      POSTGRES_PASSWORD: stackcendra
       POSTGRES_DB: stackcendra_dev
+      # No password: the port is bound to this machine only, and nothing
+      # here is real data.
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql
       - ./db/dev-init.sql:/docker-entrypoint-initdb.d/dev-init.sql:ro
