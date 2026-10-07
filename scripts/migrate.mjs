@@ -83,7 +83,9 @@ async function main() {
 
 main()
   .catch((err) => {
-    console.error(`migrate: ${err.message}`);
+    // A refused connection is an AggregateError with an empty message.
+    const detail = err.message || err.errors?.[0]?.message || err.code || String(err);
+    console.error(`migrate: ${detail}`);
     process.exitCode = 1;
   })
   .finally(() => client.end());
