@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
+import { appUrl } from '@/lib/app-url';
 import { auth } from '@/lib/auth';
 
 const STATE_COOKIE = 'gitlab_integration_oauth_state';
@@ -13,7 +14,7 @@ function isSafeRelativePath(path: string | null): path is string {
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(appUrl('/login', request));
   }
 
   const { searchParams } = new URL(request.url);
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
   // where they came from with an error the page can explain.
   const clientId = process.env.GITLAB_INTEGRATION_CLIENT_ID;
   if (!clientId) {
-    const back = new URL(isSafeRelativePath(returnTo) ? returnTo : '/settings', request.url);
+    const back = appUrl(isSafeRelativePath(returnTo) ? returnTo : '/settings', request);
     back.searchParams.set('gitlab_error', 'not_configured');
     return NextResponse.redirect(back);
   }
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
     maxAge: 600,
   });
 
-  const redirectUri = new URL('/api/integrations/gitlab/callback', request.url).toString();
+  const redirectUri = appUrl('/api/integrations/gitlab/callback', request).toString();
   const authorizeUrl = new URL('https://gitlab.com/oauth/authorize');
   authorizeUrl.searchParams.set('client_id', clientId);
   authorizeUrl.searchParams.set('redirect_uri', redirectUri);
