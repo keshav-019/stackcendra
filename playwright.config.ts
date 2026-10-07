@@ -10,6 +10,13 @@ const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;
 process.env.E2E_BASE_URL = baseURL;
 
+// The connect-flow specs only check the redirect URL the app builds, so
+// placeholder client ids are enough when real ones aren't set. Set on
+// process.env so the server and the specs (which assert on these values)
+// agree.
+process.env.GITHUB_INTEGRATION_CLIENT_ID ||= 'e2e-github-client-id';
+process.env.GITLAB_INTEGRATION_CLIENT_ID ||= 'e2e-gitlab-client-id';
+
 export default defineConfig({
   testDir: './e2e',
   globalSetup: './e2e/global-setup.ts',
@@ -43,10 +50,8 @@ export default defineConfig({
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
       AUTH_URL: baseURL,
-      // The connect-flow specs only check the redirect URL the app builds,
-      // so placeholder client ids are enough when real ones aren't set.
-      GITHUB_INTEGRATION_CLIENT_ID: process.env.GITHUB_INTEGRATION_CLIENT_ID || 'e2e-github-client-id',
-      GITLAB_INTEGRATION_CLIENT_ID: process.env.GITLAB_INTEGRATION_CLIENT_ID || 'e2e-gitlab-client-id',
+      GITHUB_INTEGRATION_CLIENT_ID: process.env.GITHUB_INTEGRATION_CLIENT_ID,
+      GITLAB_INTEGRATION_CLIENT_ID: process.env.GITLAB_INTEGRATION_CLIENT_ID,
     },
   },
 });
