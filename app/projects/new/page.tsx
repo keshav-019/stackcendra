@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { PROJECT_NAME_MAX, type ProjectProvider } from '@/lib/project-schema';
+import { integrationErrorMessage } from '@/lib/auth-errors';
 import { Github, Gitlab, HardDrive, Check, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface RemoteRepo {
@@ -52,6 +53,21 @@ export default function NewProjectPage() {
   const [repoError, setRepoError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [connectNotice, setConnectNotice] = useState<string | null>(null);
+
+  // The connect flow returns here with ?github_error=... / ?gitlab_error=...
+  // when it fails (the wizard's state is gone after that full redirect, so
+  // the explanation is shown above step one).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    for (const provider of ['github', 'gitlab'] as const) {
+      const code = params.get(`${provider}_error`);
+      if (code) {
+        setConnectNotice(integrationErrorMessage(provider === 'github' ? 'GitHub' : 'GitLab', code));
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     (['github', 'gitlab'] as const).forEach((provider) => {
@@ -165,6 +181,12 @@ export default function NewProjectPage() {
             </React.Fragment>
           ))}
         </div>
+
+        {connectNotice && (
+          <p role="alert" className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            {connectNotice}
+          </p>
+        )}
 
         <Card className="bg-black/20 border-white/10 p-6">
           {/* Step: Basics */}

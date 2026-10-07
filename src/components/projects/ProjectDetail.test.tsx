@@ -21,16 +21,17 @@ const project: Project = {
 };
 
 const fetchMock = vi.fn();
+const realFetch = globalThis.fetch;
 
 beforeEach(() => {
-  vi.stubGlobal('fetch', fetchMock);
+  globalThis.fetch = fetchMock;
 });
 
 afterEach(() => {
   fetchMock.mockReset();
   push.mockReset();
   refresh.mockReset();
-  vi.unstubAllGlobals();
+  globalThis.fetch = realFetch;
 });
 
 describe('ProjectDetail', () => {

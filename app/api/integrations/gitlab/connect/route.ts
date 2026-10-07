@@ -16,13 +16,17 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  const clientId = process.env.GITLAB_INTEGRATION_CLIENT_ID;
-  if (!clientId) {
-    return NextResponse.json({ error: 'GITLAB_INTEGRATION_CLIENT_ID is not configured' }, { status: 500 });
-  }
-
   const { searchParams } = new URL(request.url);
   const returnTo = searchParams.get('returnTo');
+
+  // Without an OAuth app there is nothing to connect to: send the user back
+  // where they came from with an error the page can explain.
+  const clientId = process.env.GITLAB_INTEGRATION_CLIENT_ID;
+  if (!clientId) {
+    const back = new URL(isSafeRelativePath(returnTo) ? returnTo : '/settings', request.url);
+    back.searchParams.set('gitlab_error', 'not_configured');
+    return NextResponse.redirect(back);
+  }
 
   const state = crypto.randomBytes(24).toString('hex');
   const cookieStore = await cookies();

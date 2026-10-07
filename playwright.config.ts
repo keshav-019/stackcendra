@@ -10,10 +10,12 @@ const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;
 process.env.E2E_BASE_URL = baseURL;
 
-// The connect-flow specs only check the redirect URL the app builds, so
+// The sign-in and connect-flow specs only check the redirect URL the app builds, so
 // placeholder client ids are enough when real ones aren't set. Set on
 // process.env so the server and the specs (which assert on these values)
 // agree.
+process.env.GITHUB_OAUTH_CLIENT_ID ||= 'e2e-github-signin-client-id';
+process.env.GOOGLE_OAUTH_CLIENT_ID ||= 'e2e-google-signin-client-id';
 process.env.GITHUB_INTEGRATION_CLIENT_ID ||= 'e2e-github-client-id';
 process.env.GITLAB_INTEGRATION_CLIENT_ID ||= 'e2e-gitlab-client-id';
 
@@ -50,6 +52,8 @@ export default defineConfig({
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
       AUTH_URL: baseURL,
+      GITHUB_OAUTH_CLIENT_ID: process.env.GITHUB_OAUTH_CLIENT_ID,
+      GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
       GITHUB_INTEGRATION_CLIENT_ID: process.env.GITHUB_INTEGRATION_CLIENT_ID,
       GITLAB_INTEGRATION_CLIENT_ID: process.env.GITLAB_INTEGRATION_CLIENT_ID,
     },

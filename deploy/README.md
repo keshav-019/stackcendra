@@ -68,6 +68,24 @@ GITLAB_INTEGRATION_CLIENT_ID=  GITLAB_INTEGRATION_CLIENT_SECRET=
 
 After editing it, apply with `docker compose up -d --no-deps web`.
 
+## Turning on sign-in and integrations on the VM
+
+Until OAuth credentials are in `.env`, the app runs but nobody can sign in:
+`/login` says so and disables the buttons (only providers with a client id
+are offered), and Connect buttons explain that the integration isn't set up.
+To enable them, register callbacks for this host and fill the matching
+`.env` values, then `docker compose up -d --no-deps web`:
+
+| Provider | Where | Callback URL for this host |
+|---|---|---|
+| GitHub sign-in | a **new** GitHub OAuth App (one app has exactly one callback URL, and stackcendra.com's app already uses its) | `http://vanisher.projectyourown.com:8080/api/auth/callback/github` |
+| Google sign-in | the existing Google OAuth client: add an authorized redirect URI | `http://vanisher.projectyourown.com:8080/api/auth/callback/google` |
+| GitHub repo access | a **new** GitHub OAuth App (same reason) | `http://vanisher.projectyourown.com:8080/api/integrations/github/callback` |
+| GitLab repo access | the existing GitLab application: add a redirect URI | `http://vanisher.projectyourown.com:8080/api/integrations/gitlab/callback` |
+
+Google only allows plain `http` redirect URIs for `localhost`, so Google
+sign-in here needs HTTPS (a domain with TLS in front of port 8080) first.
+
 ## GitHub configuration
 
 Environment **vm-production** (deployments limited to `main`) holds:

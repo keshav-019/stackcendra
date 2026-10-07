@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { integrationErrorMessage } from '@/lib/auth-errors';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -402,7 +403,7 @@ export const IntegrationsSection = () => {
         router.replace(pathname);
         loadRealStatus(p.id);
       } else if (searchParams.get(`${p.id}_error`)) {
-        toast.error(`${p.label} connection failed: ${searchParams.get(`${p.id}_error`)}`);
+        toast.error(integrationErrorMessage(p.label, searchParams.get(`${p.id}_error`) ?? ''));
         router.replace(pathname);
       }
     }
