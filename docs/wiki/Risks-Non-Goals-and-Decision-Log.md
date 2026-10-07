@@ -111,6 +111,10 @@ Until explicitly promoted by a release decision, StackCendra will not:
 | D-027 | Keep the repo/project picker inside each provider mode rather than making the mock "Projects" concept real in this pass | Accepted |
 | D-028 | Split Sprint issue data: the issue itself (title, body, open/closed) lives on the real provider; only local board metadata (column, story points) is stored in a new `sprint_items` table | Accepted |
 | D-029 | Wire only the one real My Tasks cross-tagging loop the user described (issue created in Sprint → tagged task in My Tasks → click back into mode), not a general cross-provider issue-sync system | Accepted |
+| D-030 | Self-host Postgres (database `stackcendra` in the VM's shared `pg` container, TLS only) and a Next.js standalone image on the VM, deployed by GitHub Actions on every push to `main` after lint, typecheck, unit, API and E2E tests pass (see `deploy/README.md`) | Accepted |
+| D-031 | Forward-only numbered SQL migrations in `db/migrations`, applied by one small runner (`scripts/migrate.mjs`, tracked in `migrations.schema_migrations`) in every environment, including inside the release image before it goes live; resolves the "database migration tool" open decision without adopting an ORM | Accepted |
+| D-032 | Make Projects real (supersedes D-027's deferral): per-user `projects` table and `/api/projects` CRUD; a project is local-only or linked to one GitHub repository / GitLab project the user has connected, with live data read through `RealGitTree`. The linked repo is fixed at creation; mock project data is removed | Accepted |
+| D-033 | Keep Vitest (Jest-compatible API) for backend tests rather than adding Jest: route handlers are tested directly against a real Postgres test database with only the session mocked | Accepted |
 
 ## Open decisions
 
@@ -119,7 +123,6 @@ These questions must be resolved before their dependent work begins:
 - final authentication provider and self-hosting strategy for production/Enterprise SSO and the desktop app (Firebase was evaluated and explicitly rejected — see D-013 — and GitHub OAuth via Auth.js is now wired for initial web sign-in per D-015/[ADR 0008](https://github.com/keshav-019/stackcendra/wiki/ADR-0008-GitHub-OAuth-For-Web-Auth), but that is a starting point, not the final P0-009 identity skeleton);
 - exact monorepo task orchestrator, if pnpm scripts are insufficient;
 - local Rust IPC boundary between the Tauri process and a separate agent;
-- database migration tool;
 - initial policy engine timing and whether OPA is needed before production automation;
 - telemetry storage for the public demonstration;
 - hosted AI provider abstraction and local embedding model;

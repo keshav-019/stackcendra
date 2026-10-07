@@ -1,0 +1,109 @@
+# Deployment (VM)
+
+Besides Vercel (which builds `main` into stackcendra.com on its own), the app
+runs self-hosted on the VM `vanisher.projectyourown.com`:
+
+| What | Where |
+|---|---|
+| Next.js server (UI + `/api/*` routes), container `stackcendra` | port 8080 |
+| PostgreSQL database `stackcendra`, owned by role `stackcendra` | shared `pg` container (breachsphire stack), port 5432, TLS only |
+
+The app container joins the breachsphire stack's Docker network
+(`breachsphire_default`) and reaches Postgres as `postgres` with
+`sslmode=verify-full`, using that stack's CA (`~/breachsphire/deploy/certs/ca.crt`).
+
+On the VM everything lives in `~/stackcendra/deploy` (this directory, copied
+there by CI). Backups go to `/data/backups`.
+
+## How a deploy happens
+
+Every push to `main` (except docs-only changes) runs
+[`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml):
+
+1. **check**: `npm ci`, lint, typecheck, unit tests, API tests (against a
+   Postgres service container), `next build`, shellcheck these scripts.
+   **e2e** (in parallel): Playwright against a production build and Postgres.
+2. **image**: build the [`Dockerfile`](../Dockerfile) (Next.js standalone) and
+   push `ghcr.io/keshav-019/stackcendra-web:<commit-sha>` (and `:main`).
+3. **deploy** (environment `vm-production`, `main` only): SSH in with the deploy
+   key, copy `deploy/` to `~/stackcendra`, log in to GHCR
+   for this job only, then run [`scripts/deploy.sh`](scripts/deploy.sh):
+   pull image → back up DB → apply pending migrations → swap the container →
+   health check (`/api/health`, which also checks the DB) → **roll back to the
+   previous image** if it is not healthy within 90 s → prune old images.
+
+Pull requests run steps 1–2 without pushing or deploying. A deploy can also be
+started by hand: Actions → CI/CD → Run workflow (on `main`).
+
+## Database migrations
+
+`db/migrations/NNNN_name.sql`, applied in order by
+[`scripts/migrate.mjs`](../scripts/migrate.mjs) and recorded in
+`migrations.schema_migrations`. Each file runs in one transaction. The same
+runner is used locally (`npm run db:migrate`), in CI, and here: the release
+image contains it and the migrations, and `deploy.sh` runs it from the new
+image before swapping containers, so a deploy always applies exactly the
+schema its code expects. Migrations
+are forward-only: add a new numbered file, never edit an applied one. A
+rollback restores the previous image but not the schema; every deploy takes a
+backup first (newest 7 kept).
+
+## Files on the VM that are not in git
+
+`~/stackcendra/deploy/.env` (mode 600), created when the database was set up:
+
+```
+DB_USER=stackcendra
+DB_NAME=stackcendra
+DB_PASSWORD=...                 # the stackcendra role's password
+AUTH_SECRET=...                 # openssl rand -base64 32; changing it signs everyone out
+AUTH_URL=http://vanisher.projectyourown.com:8080
+INTEGRATION_ENCRYPTION_KEY=...  # openssl rand -base64 32; must match any other
+                                # deployment sharing this database
+GITHUB_OAUTH_CLIENT_ID=  GITHUB_OAUTH_CLIENT_SECRET=
+GOOGLE_OAUTH_CLIENT_ID=  GOOGLE_OAUTH_CLIENT_SECRET=
+GITHUB_INTEGRATION_CLIENT_ID=  GITHUB_INTEGRATION_CLIENT_SECRET=
+GITLAB_INTEGRATION_CLIENT_ID=  GITLAB_INTEGRATION_CLIENT_SECRET=
+```
+
+After editing it, apply with `docker compose up -d --no-deps web`.
+
+## Turning on sign-in and integrations on the VM
+
+Until OAuth credentials are in `.env`, the app runs but nobody can sign in:
+`/login` says so and disables the buttons (only providers with a client id
+are offered), and Connect buttons explain that the integration isn't set up.
+To enable them, register callbacks for this host and fill the matching
+`.env` values, then `docker compose up -d --no-deps web`:
+
+| Provider | Where | Callback URL for this host |
+|---|---|---|
+| GitHub sign-in | a **new** GitHub OAuth App (one app has exactly one callback URL, and stackcendra.com's app already uses its) | `http://vanisher.projectyourown.com:8080/api/auth/callback/github` |
+| Google sign-in | the existing Google OAuth client: add an authorized redirect URI | `http://vanisher.projectyourown.com:8080/api/auth/callback/google` |
+| GitHub repo access | a **new** GitHub OAuth App (same reason) | `http://vanisher.projectyourown.com:8080/api/integrations/github/callback` |
+| GitLab repo access | the existing GitLab application: add a redirect URI | `http://vanisher.projectyourown.com:8080/api/integrations/gitlab/callback` |
+
+Google only allows plain `http` redirect URIs for `localhost`, so Google
+sign-in here needs HTTPS (a domain with TLS in front of port 8080) first.
+
+## GitHub configuration
+
+Environment **vm-production** (deployments limited to `main`) holds:
+
+| Secret | Value |
+|---|---|
+| `VM_HOST` | `vanisher.projectyourown.com` |
+| `VM_USER` | `ubuntu` |
+| `VM_SSH_KEY` | private half of `github-actions-deploy@stackcendra` in the VM's `~/.ssh/authorized_keys` (no port/agent/X11 forwarding, no pty) |
+| `VM_KNOWN_HOSTS` | the VM's SSH host keys, so the runner refuses a different host |
+
+## Day-to-day commands (on the VM, in `~/stackcendra/deploy`)
+
+```bash
+docker compose ps                      # status
+docker compose logs -f web             # app logs
+scripts/backup.sh                      # manual backup -> /data/backups
+docker compose run --rm --no-deps -T web node scripts/migrate.mjs --dry-run   # pending migrations
+docker tag stackcendra-web:previous stackcendra-web:current && docker compose up -d --no-deps web   # manual rollback
+docker exec -it pg psql -U stackcendra -d stackcendra   # SQL shell
+```

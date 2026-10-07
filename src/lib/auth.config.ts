@@ -6,6 +6,9 @@ export const authConfig = {
   trustHost: true,
   pages: {
     signIn: '/login',
+    // Failed sign-ins come back to /login?error=<code> (shown inline there)
+    // instead of Auth.js's unstyled default error page.
+    error: '/login',
   },
   providers: [],
   callbacks: {

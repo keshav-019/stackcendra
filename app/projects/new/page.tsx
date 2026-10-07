@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { GitProvider } from '@/lib/mock-projects';
+import { PROJECT_NAME_MAX, type ProjectProvider } from '@/lib/project-schema';
+import { integrationErrorMessage } from '@/lib/auth-errors';
 import { Github, Gitlab, HardDrive, Check, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface RemoteRepo {
@@ -22,13 +23,13 @@ interface RemoteRepo {
 
 type RealSource = 'github' | 'gitlab';
 
-function isRealSource(source: GitProvider): source is RealSource {
+function isRealSource(source: ProjectProvider): source is RealSource {
   return source === 'github' || source === 'gitlab';
 }
 
 const steps = ['Basics', 'Source', 'Connect', 'Review'] as const;
 
-const sourceOptions: { id: GitProvider; icon: React.ElementType; title: string; description: string }[] = [
+const sourceOptions: { id: ProjectProvider; icon: React.ElementType; title: string; description: string }[] = [
   { id: 'none', icon: HardDrive, title: 'Local only', description: 'Discover the project on this machine. No Git remote required.' },
   { id: 'github', icon: Github, title: 'GitHub', description: 'Connect a GitHub repository to track CI/CD and pull requests.' },
   { id: 'gitlab', icon: Gitlab, title: 'GitLab', description: 'Connect a GitLab project to track pipelines and merge requests.' },
@@ -40,7 +41,7 @@ export default function NewProjectPage() {
   const [name, setName] = useState('');
   const [localPath, setLocalPath] = useState('');
   const [description, setDescription] = useState('');
-  const [source, setSource] = useState<GitProvider>('none');
+  const [source, setSource] = useState<ProjectProvider>('none');
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
@@ -50,6 +51,23 @@ export default function NewProjectPage() {
   });
   const [realRepos, setRealRepos] = useState<RemoteRepo[] | null>(null);
   const [repoError, setRepoError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [connectNotice, setConnectNotice] = useState<string | null>(null);
+
+  // The connect flow returns here with ?github_error=... / ?gitlab_error=...
+  // when it fails (the wizard's state is gone after that full redirect, so
+  // the explanation is shown above step one).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    for (const provider of ['github', 'gitlab'] as const) {
+      const code = params.get(`${provider}_error`);
+      if (code) {
+        setConnectNotice(integrationErrorMessage(provider === 'github' ? 'GitHub' : 'GitLab', code));
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     (['github', 'gitlab'] as const).forEach((provider) => {
@@ -94,9 +112,32 @@ export default function NewProjectPage() {
     }
   };
 
-  const handleCreate = () => {
-    const slug = name.trim().toLowerCase().replace(/\s+/g, '-') || 'new-project';
-    router.push(`/projects/${slug}`);
+  const handleCreate = async () => {
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description,
+          localPath,
+          provider: source,
+          repoFullName: needsConnection ? selectedRepo : null,
+          defaultBranch: needsConnection
+            ? (realRepos?.find((repo) => repo.fullName === selectedRepo)?.defaultBranch ?? null)
+            : null,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error ?? 'Failed to create project');
+      router.push(`/projects/${data.project.id}`);
+      router.refresh();
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : 'Failed to create project');
+      setCreating(false);
+    }
   };
 
   const goNext = () => {
@@ -114,7 +155,7 @@ export default function NewProjectPage() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold text-white mb-1">Add a project</h1>
         <p className="text-sm text-gray-400 mb-6">
-          Concept UI — nothing here scans a real filesystem or calls a real Git provider yet.
+          Track a project and, optionally, link the GitHub repository or GitLab project it lives in.
         </p>
 
         {/* Step indicator */}
@@ -141,13 +182,21 @@ export default function NewProjectPage() {
           ))}
         </div>
 
+        {connectNotice && (
+          <p role="alert" className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            {connectNotice}
+          </p>
+        )}
+
         <Card className="bg-black/20 border-white/10 p-6">
           {/* Step: Basics */}
           {step === 0 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-gray-300">Project name</Label>
+                <Label htmlFor="project-name" className="text-gray-300">Project name</Label>
                 <Input
+                  id="project-name"
+                  maxLength={PROJECT_NAME_MAX}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="E-Commerce API"
@@ -155,8 +204,9 @@ export default function NewProjectPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Local path</Label>
+                <Label htmlFor="project-path" className="text-gray-300">Local path</Label>
                 <Input
+                  id="project-path"
                   value={localPath}
                   onChange={(e) => setLocalPath(e.target.value)}
                   placeholder="C:\Users\you\code\ecommerce-api"
@@ -165,8 +215,9 @@ export default function NewProjectPage() {
                 <p className="text-xs text-gray-500">The directory StackCendra will scan for services, runtimes, and configuration.</p>
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Description (optional)</Label>
+                <Label htmlFor="project-description" className="text-gray-300">Description (optional)</Label>
                 <Textarea
+                  id="project-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="What does this project do?"
@@ -308,8 +359,11 @@ export default function NewProjectPage() {
                 )}
               </div>
               <p className="text-xs text-gray-500">
-                Creating the project will take you to its detail view with concept CI/CD status and AI-suggested fixes.
+                {needsConnection
+                  ? 'The project page will show live branches, pull requests and CI/CD runs for this repository.'
+                  : 'Local paths are recorded now; scanning them needs the desktop agent, which is not available yet.'}
               </p>
+              {createError && <p role="alert" className="text-sm text-red-400">{createError}</p>}
             </div>
           )}
 
@@ -318,7 +372,8 @@ export default function NewProjectPage() {
               <ArrowLeft size={16} className="mr-1" />
               Back
             </Button>
-            <Button onClick={goNext} disabled={!canAdvance} className="bg-gradient-ai hover:opacity-90 disabled:opacity-40">
+            <Button onClick={goNext} disabled={!canAdvance || creating} className="bg-gradient-ai hover:opacity-90 disabled:opacity-40">
+              {creating && <Loader2 size={16} className="mr-1 animate-spin" />}
               {step === effectiveSteps.length - 1 ? 'Create Project' : 'Next'}
               {step !== effectiveSteps.length - 1 && <ArrowRight size={16} className="ml-1" />}
             </Button>

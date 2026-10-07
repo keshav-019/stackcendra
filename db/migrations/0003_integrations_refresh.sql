@@ -3,9 +3,7 @@
 -- tokens. These columns are nullable and only populated for providers
 -- that need them; GitHub connections leave both null.
 --
--- No migration tool is chosen yet (see the open decision in
--- docs/wiki/Risks-Non-Goals-and-Decision-Log.md) -- this file is the
--- source of truth to re-run by hand until one is.
+-- Applied by deploy/scripts/migrate.sh (see deploy/README.md).
 
 ALTER TABLE integration_connections
   ADD COLUMN IF NOT EXISTS refresh_token_encrypted TEXT,

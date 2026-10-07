@@ -8,15 +8,26 @@ import { pool } from '@/lib/db';
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   adapter: PostgresAdapter(pool),
+  // Only providers with credentials are registered, so a deployment without
+  // (say) a Google OAuth client never sends people to a broken Google page.
+  // The sign-in pages read the registered list from /api/auth/providers.
   providers: [
-    GitHub({
-      clientId: process.env.GITHUB_OAUTH_CLIENT_ID,
-      clientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET,
-    }),
-    Google({
-      clientId: process.env.GOOGLE_OAUTH_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-    }),
+    ...(process.env.GITHUB_OAUTH_CLIENT_ID
+      ? [
+          GitHub({
+            clientId: process.env.GITHUB_OAUTH_CLIENT_ID,
+            clientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+    ...(process.env.GOOGLE_OAUTH_CLIENT_ID
+      ? [
+          Google({
+            clientId: process.env.GOOGLE_OAUTH_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+          }),
+        ]
+      : []),
   ],
   session: { strategy: 'jwt' },
   callbacks: {

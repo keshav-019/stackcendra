@@ -1,0 +1,13 @@
+.git
+.github
+.next
+node_modules
+coverage
+playwright-report
+test-results
+e2e
+docs
+deploy
+.env*
+!.env.example
+Dockerfile

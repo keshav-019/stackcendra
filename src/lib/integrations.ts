@@ -1,5 +1,6 @@
 import { pool } from '@/lib/db';
 import { encrypt, decrypt } from '@/lib/crypto';
+import { GITHUB_REPO_FULL_NAME_RE, GITLAB_PROJECT_PATH_RE } from '@/lib/repo-names';
 
 export interface IntegrationConnection {
   provider: string;
@@ -176,7 +177,7 @@ export interface GithubJobFailure {
 // harmless here since the value only ever reaches an outbound GitHub API
 // call, never a filesystem path, but rejecting it outright is clearer than
 // relying on that.
-export const GITHUB_REPO_FULL_NAME_RE = /^[A-Za-z0-9_][A-Za-z0-9_.-]*\/[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
+export { GITHUB_REPO_FULL_NAME_RE };
 
 export async function fetchGithubWorkflowRuns(accessToken: string, repoFullName: string): Promise<GithubWorkflowRun[]> {
   const res = await fetch(`https://api.github.com/repos/${repoFullName}/actions/runs?per_page=15`, {
@@ -418,7 +419,7 @@ export interface GitlabProject {
   defaultBranch: string;
 }
 
-export const GITLAB_PROJECT_PATH_RE = /^[A-Za-z0-9_][A-Za-z0-9_.-]*(\/[A-Za-z0-9_][A-Za-z0-9_.-]*)+$/;
+export { GITLAB_PROJECT_PATH_RE };
 
 async function refreshGitlabToken(
   refreshToken: string

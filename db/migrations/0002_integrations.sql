@@ -1,11 +1,9 @@
 -- Third-party integration connections (distinct from the Auth.js
--- users/accounts tables in auth-schema.sql). One row per user per
+-- users/accounts tables in 0001_auth.sql). One row per user per
 -- provider. access_token_encrypted holds an AES-256-GCM ciphertext
 -- (see src/lib/crypto.ts), never a plaintext token.
 --
--- No migration tool is chosen yet (see the open decision in
--- docs/wiki/Risks-Non-Goals-and-Decision-Log.md) -- this file is the
--- source of truth to re-run by hand until one is.
+-- Applied by deploy/scripts/migrate.sh (see deploy/README.md).
 
 CREATE TABLE IF NOT EXISTS integration_connections
 (

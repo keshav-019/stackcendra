@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { authErrorMessage, EMAIL_PASSWORD_UNAVAILABLE } from '@/lib/auth-errors';
+import { NO_PROVIDERS_MESSAGE, useAuthProviders } from '@/hooks/use-auth-providers';
 import { signIn } from 'next-auth/react';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { Button } from '@/components/ui/button';
@@ -33,12 +34,18 @@ const editions: { id: Edition; icon: React.ElementType; title: string; descripti
 ];
 
 export default function SignupPage() {
-  const router = useRouter();
   const [edition, setEdition] = useState<Edition>('individual');
+  const [notice, setNotice] = useState<string | null>(null);
+  const providers = useAuthProviders();
+  const unavailable = (id: 'github' | 'google') => providers !== null && !providers.has(id);
+
+  useEffect(() => {
+    setNotice(authErrorMessage(new URLSearchParams(window.location.search).get('error')));
+  }, []);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    router.push('/');
+    setNotice(EMAIL_PASSWORD_UNAVAILABLE);
   };
 
   return (
@@ -55,11 +62,23 @@ export default function SignupPage() {
         </>
       }
     >
+      {providers?.size === 0 && !notice && (
+        <p role="alert" className="mb-5 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-100">
+          {NO_PROVIDERS_MESSAGE}
+        </p>
+      )}
+      {notice && (
+        <p role="alert" className="mb-5 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          {notice}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3 mb-5">
         <Button
           type="button"
           variant="outline"
           onClick={() => signIn('github', { callbackUrl: '/' })}
+          disabled={unavailable('github')}
+          title={unavailable('github') ? 'Not configured on this server' : undefined}
           className="border-white/10 bg-white/5 hover:bg-white/10 text-white"
         >
           <Github size={16} className="mr-2" />
@@ -69,6 +88,8 @@ export default function SignupPage() {
           type="button"
           variant="outline"
           onClick={() => signIn('google', { callbackUrl: '/' })}
+          disabled={unavailable('google')}
+          title={unavailable('google') ? 'Not configured on this server' : undefined}
           className="border-white/10 bg-white/5 hover:bg-white/10 text-white"
         >
           <Mail size={16} className="mr-2" />

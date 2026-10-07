@@ -8,20 +8,23 @@ const SESSION_COOKIE_NAME = 'authjs.session-token';
  * server uses, and injects it as a cookie. This is the only practical way to
  * exercise authenticated routes in E2E tests: signing in for real would mean
  * automating a third-party consent screen (GitHub/Google) with a live test
- * account, which is out of scope here. The user this cookie represents is
- * synthetic and is never written to Postgres -- fine for exercising session
- * gating and authenticated-UI rendering, but this does not cover the real
- * OAuth handshake itself (verified manually instead, see ADR 0008/0010).
+ * account, which is out of scope here. The cookie alone writes nothing to
+ * Postgres: the default user is inserted by e2e/global-setup.ts, and tests
+ * that need their own isolated data create one with createTestUser()
+ * (e2e/db.ts) and pass it here. This does not cover the real OAuth
+ * handshake itself (verified manually instead, see ADR 0008/0010).
  */
+export const DEFAULT_TEST_USER = {
+  id: '00000000-0000-4000-8000-000000000001',
+  name: 'Test User',
+  email: 'test.user@example.com',
+  provider: 'github',
+};
+
 export async function signInAs(
   context: BrowserContext,
-  user: { id: string; name: string; email: string; provider?: string } = {
-    id: '00000000-0000-4000-8000-000000000001',
-    name: 'Test User',
-    email: 'test.user@example.com',
-    provider: 'github',
-  },
-  baseURL = 'http://localhost:8080'
+  user: { id: string; name: string; email: string; provider?: string } = DEFAULT_TEST_USER,
+  baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3100'
 ) {
   const secret = process.env.AUTH_SECRET;
   if (!secret) {

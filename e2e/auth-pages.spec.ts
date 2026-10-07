@@ -101,3 +101,36 @@ test.describe('OAuth URL construction (API-level, no third-party navigation)', (
     expect(url).toContain(`client_id=${process.env.GOOGLE_OAUTH_CLIENT_ID}`);
   });
 });
+
+test.describe('Sign-in feedback', () => {
+  test('a failed sign-in sent back by Auth.js is explained on /login', async ({ page }) => {
+    await page.goto('/login?error=AccessDenied');
+    await expect(page.locator('p[role=alert]')).toHaveText(
+      'Sign-in was cancelled or access was denied.'
+    );
+  });
+
+  test('Auth.js errors land on /login, not the default error page', async ({ page }) => {
+    const res = await page.request.get('/api/auth/error?error=Configuration', { maxRedirects: 0 });
+    expect(res.status()).toBe(302);
+    expect(res.headers()['location']).toContain('/login?error=Configuration');
+  });
+
+  test('submitting the email/password form explains it is unavailable and stays put', async ({ page }) => {
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+    await page.getByLabel('Email').fill('someone@example.com');
+    await page.getByLabel('Password').fill('hunter22');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page.locator('p[role=alert]')).toHaveText(
+      "Email and password sign-in isn't available yet. Continue with GitHub or Google instead."
+    );
+    await expect(page).toHaveURL('/login');
+  });
+
+  test('the configured providers are enabled', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'GitHub' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Google' })).toBeEnabled();
+  });
+});

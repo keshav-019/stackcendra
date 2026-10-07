@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { appUrl } from '@/lib/app-url';
 import { auth } from '@/lib/auth';
 import { fetchGitlabUser, saveConnection } from '@/lib/integrations';
 
@@ -13,7 +14,7 @@ function isSafeRelativePath(path: string | undefined): path is string {
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(appUrl('/login', request));
   }
 
   const { searchParams } = new URL(request.url);
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
   const cookieStore = await cookies();
   const returnToCookie = cookieStore.get(RETURN_TO_COOKIE)?.value;
   const returnTo = isSafeRelativePath(returnToCookie) ? returnToCookie : '/settings';
-  const settingsUrl = new URL(returnTo, request.url);
+  const settingsUrl = appUrl(returnTo, request);
   cookieStore.delete(RETURN_TO_COOKIE);
 
   if (error) {
@@ -47,7 +48,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(settingsUrl.toString());
   }
 
-  const redirectUri = new URL('/api/integrations/gitlab/callback', request.url).toString();
+  const redirectUri = appUrl('/api/integrations/gitlab/callback', request).toString();
   const tokenRes = await fetch('https://gitlab.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },

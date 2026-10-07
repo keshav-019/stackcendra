@@ -34,4 +34,14 @@ describe('SignupPage', () => {
     expect(screen.getByRole('button', { name: /GitHub/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Google/i })).toBeInTheDocument();
   });
+
+  it('explains that email/password sign-up is unavailable instead of silently doing nothing', async () => {
+    const user = userEvent.setup();
+    render(<SignupPage />);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent("Email and password sign-in isn't available yet");
+  });
 });
